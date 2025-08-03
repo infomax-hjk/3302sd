@@ -1,0 +1,3152 @@
+Dim g_next3302
+Dim g_next3303
+
+dim g_label
+dim g_check
+dim g_linkcombo6
+dim g_isrequest
+Dim g_IsReq5445
+g_check = Array(1,1,1,1,0, 0,0,0,0,0, 0,0,0,0,0)
+g_label = Array("외국인합","개인",	"기관계", "증권/선물" ,	"보험",	"투신", "사모펀드", "은행", "종금/저축", "연기금",	"정부", "기타법인")
+
+DIM g_jisu
+DIM g_code
+DIM g_group
+DIM g_sangpum
+DIM g_option
+dim g_linkcode
+Dim g_FileName
+Dim g_3797MaxCnt
+dim g_ReceiveCompleteFlag
+g_IsReq5445 = False
+g_3797MaxCnt = 299
+
+'============================================================================
+Sub Combo1_OnListSelChanged(iIndex)
+	ComboVisible()
+	select case iIndex
+			case 0
+				Combo3.Visible = true	
+'				Combo3.SetCurSel(0)
+'				Label1.Caption = Combo3.GetCellString ( Combo3.GetCurSel() , 1)
+			case 1
+				Combo2.Visible = true			
+'				Combo2.SetCurSel(0)
+'				Label1.Caption = Combo2.GetCellString ( Combo2.GetCurSel() , 1)
+			case 2
+				Combo4.Visible = true
+'				Combo4.SetCurSel(0)
+'				Label1.Caption = Combo4.GetCellString ( Combo4.GetCurSel() , 1)		
+			case 3
+				Combo8.Visible = true
+'				Combo8.SetCurSel(0)
+'				Label1.Caption = Combo8.GetCellString ( Combo8.GetCurSel() , 1)				
+			case 4
+				Combo9.Visible = true			
+'				Combo9.SetCurSel(0)
+'				Label1.Caption = Combo9.GetCellString ( Combo9.GetCurSel() , 1)				
+			case 5
+				Combo10.Visible = true			
+'				Combo10.SetCurSel(0)
+'				Label1.Caption = Combo10.GetCellString ( Combo10.GetCurSel() , 1)
+			case 6
+				'Combo13.Visible = true			
+'				Label1.Caption = ""
+				'Label1.Caption = Combo13.GetCellString ( Combo10.GetCurSel() , 1)
+			case 7 ' 유로스톡스50 추가
+			   Combo15.Visible = true			
+				'Label1.Caption = ""
+'				Label1.Caption = Combo15.GetCellString ( Combo15.GetCurSel() , 1)				
+			case 8			
+				Combo11.Visible = true			
+'				Combo11.SetCurSel(0)
+'				Label1.Caption = Combo11.GetCellString ( Combo11.GetCurSel() , 1)				
+			case 9
+				Combo12.Visible = true							
+'				Combo12.SetCurSel(0)				
+'				Label1.Caption = Combo12.GetCellString ( Combo12.GetCurSel() , 1)							
+			case 10,11,12 'ETF/ETN
+'				Label1.Caption = ""			
+		end select
+	g_jisu = Combo1.GetCellString ( Combo1.GetCurSel() , 0)
+	set3302_3303()
+End Sub
+Sub ComboVisible()
+	Combo2.Visible = false
+	Combo3.Visible = false
+	Combo4.Visible = false
+	Combo8.Visible = false
+	Combo9.Visible = false
+	Combo10.Visible = false
+	Combo11.Visible = false
+	Combo12.Visible = false
+	Combo13.Visible = false
+	Combo15.Visible = false
+End sub
+'============================================================================
+Sub Form_FormRefresh()
+	g_ReceiveCompleteFlag = 0 
+	TRANMANAGER.RequestData "3698" ' 선물
+	TRANMANAGER.RequestData "4002" ' 일자
+End Sub
+
+'============================================================================
+Sub Form_FormInit()
+	Form_FormRefresh()
+
+	combo3.AddRow "201" & "@" & "대형주"
+	combo3.AddRow "202" & "@" & "중형주"
+	combo3.AddRow "203" & "@" & "소형주"
+	combo3.AddRow "211" & "@" & "KOSPI200"
+	combo3.AddRow "212" & "@" & "K200 건설"
+	combo3.AddRow "213" & "@" & "K200 중공업"
+	combo3.AddRow "214" & "@" & "K200 철강소재"
+	combo3.AddRow "215" & "@" & "K200 에너지화학"
+	combo3.AddRow "216" & "@" & "K200 정보통신"
+	combo3.AddRow "221" & "@" & "KOSPI100"
+	combo3.AddRow "222" & "@" & "KOSPI50"
+	combo3.AddRow "231" & "@" & "KODI"
+	combo3.AddRow "232" & "@" & "지배구조지수"
+	
+	combo2.AddRow "981" & "@" & "KQ100"
+	combo2.AddRow "982" & "@" & "KQ Mid 300"
+	combo2.AddRow "983" & "@" & "KQ Small"
+	combo2.AddRow "984" & "@" & "KOSTAR"
+	
+	
+	
+	g_next3302 = 1
+	g_next3303 = 1
+	g_isrequest	= 1
+	GridPro2.SetCellString 0 , 0 , 0 , "기간누적"
+	GridPro4.SetCellString 0 , 0 , 0 , "기간누적"
+	Button1_OnClick()
+
+	setlink()
+	setchartgap()
+	
+
+	Call RadioGroup2_OnClick(RadioGroup2.GetCheckIndex( ))
+End Sub
+
+Sub Combo_Match(oCombo, sName, sDayType )
+	
+	sDayType_tmp = ""
+	If sDayType = "N" Then
+		sDayType_tmp = "야간"
+	ElseIf sDayType = "T" Then
+		sDayType_tmp = "24h"
+	End If
+
+	trace sDayType_tmp
+	Set Combo_Target = oCombo
+	
+	For i=0 to Combo_Target.GetTotalRow -1
+		sComboName = Trim(Combo_Target.GetCellString (i , 1))
+		if sDayType_tmp = "" Then
+			If InStr(sComboName , sName) Then
+				Combo_Target.SetCurSel i
+				Exit For
+			End If
+		Else
+			trace sComboName
+'			trace InStr(sComboName , sName)
+'			trace InStr(sComboName , sDayType_tmp)
+			If InStr(sComboName , sName) >0 and InStr(sComboName , sDayType_tmp) >0 Then
+				trace i
+				Combo_Target.SetCurSel i
+				Exit For
+			End If
+		End If
+	Next
+End Sub
+
+Sub setlink()
+	g_linkcombo6 = 0
+
+	'링크
+	MKT = Form.GetLinkVar("LINK_MKT" , TRUE)
+	CLS = Form.GetLinkVar("LINK_CLS" , TRUE)
+	if trim(MKT) <> "" then
+		if MKT = 0 then
+			Combo1.SetCurSel(CLS)	'거래소 : 0 , 코스닥 : 1
+			RadioGroup1.SetCheckAt (0)
+		elseif MKT = 1 then
+			Combo1.SetCurSel(3)
+
+		elseif MKT = 9 then
+			if CLS = "0" then
+				Combo1.SetCurSel(6)
+				RadioGroup1.SetCheckAt (1)
+			elseif "1" then
+				Combo1.SetCurSel(6)
+				Combo6.SetCurSel 10
+				Combo7.SetCurSel 7
+				Combo7_OnListSelChanged(7)
+				RadioGroup1.SetCheckAt (0)		'금액
+				Combo1_OnListSelChanged(6)
+			elseif "2" then
+				Combo1.SetCurSel(6)
+				Combo6.SetCurSel 10
+				Combo7.SetCurSel 7
+				Combo7_OnListSelChanged(7)
+				RadioGroup1.SetCheckAt (1)		'수량
+				Combo1_OnListSelChanged(6)
+			end if
+		else
+			Combo1.SetCurSel MKT
+			RadioGroup1.SetCheckAt (1)
+			Combo1_OnListSelChanged MKT
+		end if
+	end if	
+	
+	GrpTp = Form.GetLinkVar("LINK_GRPTP" , TRUE)
+	CmmdCd = Form.GetLinkVar("LINK_CMMDCD" , TRUE)
+	DayType = Form.GetLinkVar("LINK_DAYTYPE" , TRUE)	
+
+	if Len(GrpTp) <> 0 then
+		if GrpTp = "F" then
+			Combo1.SetCurSel(3)
+			Combo8.Visible = true
+			if CmmdCd = "01" then
+				Call Combo_Match (Combo1, "지수선물", "0" )
+				Call Combo_Match (Combo8, "코스피200", DayType )
+'				Combo8.SetCurSel(0) 'k200선물 : 0 star : 1 
+				RadioGroup1.SetCheckAt (1)
+			elseif CmmdCd = "05" then
+				Call Combo_Match (Combo1, "지수선물", "0" )
+				Call Combo_Match (Combo8, "미니코스피200", DayType )
+				'Combo8.SetCurSel(1) 
+				RadioGroup1.SetCheckAt (1)
+			elseif CmmdCd = "06" then
+				Call Combo_Match (Combo1, "지수선물", "0" )
+				Call Combo_Match (Combo8, "코스닥150", DayType )
+'				Combo8.SetCurSel(2) 'k200선물 : 0 star : 1 
+				RadioGroup1.SetCheckAt (1)				
+			end if
+		'elseif GrpTp = "Q" then
+		'	Combo1.SetCurSel(3)
+		'	Combo8.Visible = true
+		'	Combo8.SetCurSel(1) 'k200선물 : 0 star : 1 
+		'	RadioGroup1.SetCheckAt (1)
+		elseif GrpTp = "C" then
+			trace CmmdCd 
+			if CmmdCd = "61" or CmmdCd = "65" then
+				Call Combo_Match (Combo1, "금리선물", "0" )
+				Call Combo_Match (Combo4, "KTB_03", DayType )
+'				Combo1.SetCurSel(2)
+'				RadioGroup1.SetCheckAt (1)
+
+			elseif CmmdCd = "63" or CmmdCd = "66" then
+				Call Combo_Match (Combo1, "금리선물", "0")
+				Call Combo_Match (Combo4, "KTB_05", DayType )
+'				Combo1.SetCurSel(2)
+'				Combo4.SetCurSel 1
+				RadioGroup1.SetCheckAt (1)
+			elseif CmmdCd = "64" or CmmdCd = "67" then
+				Call Combo_Match (Combo1, "금리선물", "0")
+				Call Combo_Match (Combo4, "KTB_10", DayType )			
+'				Combo1.SetCurSel(2)
+'				Combo4.SetCurSel 2
+				RadioGroup1.SetCheckAt (1)
+			elseif CmmdCd = "70" then
+				Call Combo_Match (Combo1, "금리선물", "0")
+				Call Combo_Match (Combo4, "KTB_30", DayType )			
+'				Combo1.SetCurSel(2)
+'				Combo4.SetCurSel 3
+				RadioGroup1.SetCheckAt (1)		
+			elseif CmmdCd = "69" then
+				Call Combo_Match (Combo1, "금리선물", "0")
+				Call Combo_Match (Combo4, "KOFR", DayType )		
+'				Combo1.SetCurSel(2)
+'				Combo4.SetCurSel 4
+				RadioGroup1.SetCheckAt (1)			
+			elseif CmmdCd = "75" then
+				Call Combo_Match (Combo1, "통화선물", "0")
+				Call Combo_Match (Combo9, "USD", DayType )		
+'				Combo1.SetCurSel(4)
+				Combo9.Visible = true
+'				Combo9.SetCurSel(0) 
+				RadioGroup1.SetCheckAt (1)
+			elseif CmmdCd = "76" then
+				Call Combo_Match (Combo1, "통화선물", "0" )
+				Call Combo_Match (Combo9, "JPY", DayType )		
+'				Combo1.SetCurSel(4)
+				Combo9.Visible = true
+'				Combo9.SetCurSel(1) 
+				RadioGroup1.SetCheckAt (1)
+			elseif CmmdCd = "77" then
+				Call Combo_Match (Combo1, "통화선물", "0" )
+				Call Combo_Match (Combo9, "EUR", DayType )	
+'				Combo1.SetCurSel(4)
+				Combo9.Visible = true
+'				Combo9.SetCurSel(2) 
+				RadioGroup1.SetCheckAt (1)
+'			elseif CmmdCd = "85" then
+'				Combo1.SetCurSel(5)
+'				Combo10.Visible = True
+'				Combo10.SetCurSel(0)
+'				RadioGroup1.SetCheckAt (1)
+'			elseif CmmdCd = "86" then
+'				Combo1.SetCurSel(5)
+'				Combo10.Visible = True
+'				Combo10.SetCurSel(1)
+'				RadioGroup1.SetCheckAt (1)
+			elseif CmmdCd = "88" then
+				Call Combo_Match (Combo1, "상품선물", "0" )
+				Call Combo_Match (Combo10, "골드", DayType )	
+'				Combo1.SetCurSel(5)
+				Combo10.Visible = True
+'				Combo10.SetCurSel(2)
+				RadioGroup1.SetCheckAt (1)
+			end if
+		elseif GrpTp = "L" then
+			Combo1.SetCurSel(6)
+			RadioGroup1.SetCheckAt (1)
+		elseif GrpTp = "G" then
+			Combo1.SetCurSel(7)
+			RadioGroup1.SetCheckAt (1)			
+			Combo15.SetCurSel(1)
+		end if
+	end if
+
+	code1 = Form.GetLinkVar("TUJAJACODE_1" , TRUE)
+	code2 = Form.GetLinkVar("TUJAJACODE_2" , TRUE)
+	code3 = Form.GetLinkVar("TUJAJACODE_3" , TRUE)
+	
+	select case code1
+		case "1"
+			Combo1.SetCurSel(0)
+			Combo1_OnListSelChanged(0)
+			Combo3.SetCurSelByCaption(code2)
+			if (code3 = "5") then
+				g_linkcombo6 = 15
+			end if
+			
+		case "7"
+			Combo1.SetCurSel(1)
+			Combo1_OnListSelChanged(1)
+			Combo2.SetCurSelByCaption(code2)
+			if (code3 = "5") then
+				g_linkcombo6 = 15
+			end if
+	end select
+
+	select case code1
+		case "10"
+			Combo1.SetCurSel(0)
+			Combo1_OnListSelChanged(0)
+			Combo3.SetCurSel(code2)
+			Combo3_OnListSelChanged(code2)
+		case "11"
+			Combo1.SetCurSel(1)
+			Combo1_OnListSelChanged(1)
+			Combo2.SetCurSel(code2)
+			Combo2_OnListSelChanged(code2)
+		case "12","13","14","15","16","17"
+			Combo1.SetCurSel(CLng(code1)-10)
+			Combo1_OnListSelChanged(CLng(code1)-10)
+			select case code1
+				case "12"
+					Combo4.SetCurSel(code2)
+					Combo4_OnListSelChanged(code2)
+				case "13"
+					Combo8.SetCurSel(code2)
+					Combo8_OnListSelChanged(code2)
+				case "14"
+					Combo9.SetCurSel(code2)
+					Combo9_OnListSelChanged(code2)
+				case "15"
+					Combo10.SetCurSel(code2)
+					Combo10_OnListSelChanged(code2)
+				case "16"
+					Combo11.SetCurSel(code2)
+					Combo11_OnListSelChanged(code2)
+				case "17"
+					Combo12.SetCurSel(code2)
+					Combo12_OnListSelChanged(code2)
+	
+			end select
+	end select
+	 
+	select case code2
+		case "001"	' 거래소
+			Combo1.SetCurSel(0)
+			Combo1_OnListSelChanged(0)
+			Combo3.SetCurSelByCaption(code2)
+			
+		case "211"	' 코스피200
+			Combo1.SetCurSel(0)
+			Combo1_OnListSelChanged(0)
+			Combo3.SetCurSelByCaption(code2)
+		
+		case "801"	' 코스닥
+			Combo1.SetCurSel(1)
+			Combo1_OnListSelChanged(1)
+			Combo2.SetCurSelByCaption(code2)
+
+		case "501"	' KRX100
+			Combo1.SetCurSel(0)
+			Combo1_OnListSelChanged(0)
+			Combo3.SetCurSelByCaption(code2)
+		
+		case "221"	' 코스피100
+			Combo1.SetCurSel(0)
+			Combo1_OnListSelChanged(0)
+			Combo3.SetCurSelByCaption(code2)
+		
+		case "222"	'코스피50
+			Combo1.SetCurSel(0)
+			Combo1_OnListSelChanged(0)
+			Combo3.SetCurSelByCaption(code2)
+		
+		case "984"	' 코스타
+			Combo1.SetCurSel(1)
+			Combo1_OnListSelChanged(1)
+			Combo2.SetCurSelByCaption(code2)
+		
+		case "806"	' 코스닥벤처
+			Combo1.SetCurSel(1)
+			Combo1_OnListSelChanged(1)
+			Combo2.SetCurSelByCaption(code2)
+	end select	
+
+	select case mid(code2,1,3)
+		case "101"	' 지수선물
+			Combo1.SetCurSel(3)
+			Combo1_OnListSelChanged(3)
+		case "A01"	' 지수선물
+			Combo1.SetCurSel(3)
+			Combo1_OnListSelChanged(3)
+
+		case "161"	' KTB선물
+			Combo1.SetCurSel(2)
+			Combo1_OnListSelChanged(2)
+			
+		case "165"' KTB
+			Combo1.SetCurSel(2)
+			Combo1_OnListSelChanged(2)
+		case "A65"' KTB_03
+			Combo1.SetCurSel(2)
+			Combo1_OnListSelChanged(2)
+			
+		case "167"' KTB_10
+			Combo1.SetCurSel(2)
+'			Combo1_OnListSelChanged(2)
+			Combo4.SetCurSel 2
+		case "A67"' KTB_10
+			Combo1.SetCurSel(2)
+'			Combo1_OnListSelChanged(2)
+			Combo4.SetCurSel 2
+			
+		case "170"' KTB_30
+			Combo1.SetCurSel(2)
+			Combo4.SetCurSel 3
+		case "A70"' KTB_30
+			Combo1.SetCurSel(2)
+			Combo4.SetCurSel 3
+						
+			
+		case "169"' KOFR
+			Combo1.SetCurSel(2)
+			Combo4.SetCurSel 4
+		case "A69"' KOFR
+			Combo1.SetCurSel(2)
+			Combo4.SetCurSel 4			
+
+
+
+
+
+		case "201"	' 지수옵션콜
+			Combo1.SetCurSel(6)
+			Combo1_OnListSelChanged(6)
+
+			Combo11.SetCurSel(0)
+			Combo11_OnListSelChanged(0)
+		case "B01"	' 지수옵션콜
+			Combo1.SetCurSel(6)
+			Combo1_OnListSelChanged(6)
+
+			Combo11.SetCurSel(0)
+			Combo11_OnListSelChanged(0)
+			
+
+		case "301"	' 지수옵션풋
+			Combo1.SetCurSel(6)
+			Combo1_OnListSelChanged(6)
+
+			Combo11.SetCurSel(1)
+			Combo11_OnListSelChanged(1)			
+		case "C01"	' 지수옵션풋
+			Combo1.SetCurSel(6)
+			Combo1_OnListSelChanged(6)
+
+			Combo11.SetCurSel(1)
+			Combo11_OnListSelChanged(1)
+		
+	end select
+
+	sDataType = Form.GetLinkVar("DATA_TYPE_3302" , TRUE)
+	if sDataType = "0" Then
+		RadioGroup1.SetCheckAt 0
+	ElseIf sDataType = "1" Then
+		RadioGroup1.SetCheckAt 1
+	End If
+
+
+	if (Not Form.IsLayoutOpen) then
+		select case Form.GetMainTr( )
+			case "3802"
+				if Combo1.GetCurSel <> 2 AND RadioGroup1.GetCheckIndex <> 1 then					
+					Combo1.SetCurSel(2)
+					Combo1_OnListSelChanged(2)
+					RadioGroup1.SetCheckAt(1)
+					SetCheck("USER_3802.ini")
+				end if
+			case "3803"	
+				if Combo1.GetCurSel <> 2 AND RadioGroup1.GetCheckIndex <> 1 then
+					g_linkcombo6 = 5
+					SetCheck("USER_3803.ini")
+				end if
+			case "3302"
+				SetCheck("USER_3302.ini")
+		end select	
+	else
+		Combo7_OnListSelChanged( Combo7.GetCurSel )		
+	end if
+End Sub
+'============================================================================
+Sub SetCheck(FileName)
+	Dim Fso
+	Set Fso = CreateObject("Scripting.FileSystemObject")
+	g_FileName = FileName
+	
+	if Fso.FileExists(Form.GetRuntimePath & "\usr\" & g_FileName) = False then
+		for i = 0 to 14 
+			if i >= 0 and i <= 3 then
+				Form.WriteConfigFileData g_FileName, "TUJAJA_CHECK", "ITEM"&i, "1"
+			else
+				Form.WriteConfigFileData g_FileName, "TUJAJA_CHECK", "ITEM"&i, "0"
+			end if
+		Next
+	end if
+	
+	for i = 0 to 14
+		g_check(i) = Form.GetConfigFileData (g_FileName, "TUJAJA_CHECK", "ITEM"&i, "0")
+		if g_check( i ) = 0 then
+			TeeChart2.ShowGraph "Series" & i , false
+		elseif g_check(i) = 1 then
+			TeeChart2.ShowGraph "Series" & i , true
+		end if
+	Next
+	
+End Sub
+   
+'============================================================================
+Sub Button1_OnClick()
+
+	nTop = GridPro1.GetTopHeadCellTop( 0, 1, 0)
+	nBotton = GridPro1.GetTopHeadCellBottom( 0 , 1 , 0 )
+	nHeight = nBotton - nTop
+
+	rgIndex = RadioGroup2.GetCheckIndex( )
+
+	if Button1.UseImage = 455 then
+		Button1.UseImage = 1150
+				
+		if rgIndex = 0 then
+			GridPro1.Height = 290
+			GridPro2.Top = 66
+			GridPro3.Height = 290
+			GridPro4.Top = 66				
+		else
+			GridPro1.Height = 270
+			GridPro2.Top = 317
+			GridPro3.Height = 270
+			GridPro4.Top = 317		
+		end if
+				
+					
+'		GridPro1.Height = 290
+'		GridPro2.Top = 66
+'		GridPro3.Height = 290
+'		GridPro4.Top = 66
+
+
+		ChartVisible(0)
+		SetGraphData()
+	elseif Button1.UseImage = 1150 then
+		Button1.UseImage = 455
+		if rgIndex = 0 then
+			GridPro1.Height = 524
+			GridPro2.Top =  66
+			GridPro3.Height = 524
+			GridPro4.Top = 66			
+		else
+			GridPro1.Height = 504
+			GridPro2.Top =  551 		
+			GridPro3.Height = 504
+			GridPro4.Top = 551
+						
+		end if		
+		
+'		GridPro1.Height = 524
+'		GridPro2.Top =  66
+'		GridPro3.Height = 524
+'		GridPro4.Top = 66
+
+
+		ChartVisible(1)
+	end if
+End Sub
+
+Sub ChartVisible(i)
+	if i = 0 then
+		TeeChart3.Visible = true
+		TeeChart2.Visible = true
+		Label4.Visible = true
+		Label5.Visible = true
+		Label6.Visible = true
+		Button2.Visible = true
+	elseif i = 1 then
+		TeeChart3.Visible = false
+		TeeChart2.Visible = false
+		Label4.Visible = false
+		Label5.Visible = false
+		Label6.Visible = false
+		Button2.Visible = false	
+	end if
+End Sub
+'============================================================================
+Sub Combo7_OnListSelChanged(iIndex)
+	if Not Form.IsLayoutOpen then
+'		select case Combo7.GetCurSel( )
+'			case 10	' 기간설정
+'				Calendar1.Enabled = true
+'				Calendar2.Enabled = true
+'			case else	
+'				Calendar1.Enabled = false
+'				Calendar2.Enabled = false 
+'				Calendar1.Caption = TRANMANAGER.GetItemData("4002" , "OutBlock1" , "시작일자" , Combo7.GetCurSel( ) )
+'				Calendar2.Caption = TRANMANAGER.GetItemData("4002" , "OutBlock1" , "종료일자" , Combo7.GetCurSel( ) )
+'		end select		
+'		set3302_3303()
+'		exit sub
+	end if
+
+	CalendarVisible()
+	select case iIndex
+		case 0 	' 당일
+			Calendar1.Caption = Form.GetHostDate
+			Calendar2.Caption = Form.GetHostDate
+			
+		case 1 	' 전일
+			AYear = Year(DateAdd("d", -1, Date))
+			AMonth = Month(DateAdd("d", -1, Date))
+			ADay = Day(DateAdd("d", -1, Date))	
+			Calendar1.SetDate AYear, AMonth, ADay
+			Calendar2.SetDate AYear, AMonth, ADay
+			
+		case 2 	' 금주
+			ilja = mid(Form.GetHostDate,1,4) & "-" & mid(Form.GetHostDate,5,2) & "-" & mid(Form.GetHostDate,7,2)
+			gubun =  WeekDay(ilja)
+			select case gubun
+				case 1	' 일요일
+					ilsu = -6
+				
+				case 2	' 월요일
+					ilsu = 0
+				
+				case 3	' 화요일
+					ilsu = -1
+				
+				case 4	' 수요일
+					ilsu = -2
+				
+				case 5	' 목요일
+					ilsu = -3
+				
+				case 6	' 금요일
+					ilsu = -4
+				
+				case 7	' 토요일
+					ilsu = -5
+				
+			end select
+			AYear = Year(DateAdd("d", ilsu, Date))
+			AMonth = Month(DateAdd("d", ilsu, Date))
+			ADay = Day(DateAdd("d", ilsu, Date))	
+
+			Calendar1.SetDate AYear, AMonth, ADay
+			Calendar2.Caption = Form.GetHostDate
+		
+		case 3 	' 1주일
+			AYear = Year(DateAdd("d", -7, Date))
+			AMonth = Month(DateAdd("d", -7, Date))
+			ADay = Day(DateAdd("d", -7, Date))	
+			Calendar1.SetDate AYear, AMonth, ADay
+			Calendar2.Caption = Form.GetHostDate
+		
+		case 4 	' 당월
+			Calendar1.Caption = mid(Form.GetHostDate ,1,6) & "01"
+			Calendar2.Caption = Form.GetHostDate
+			
+		case 5 	' 1개월
+			AYear = Year(DateAdd("m", -1, Date))
+			AMonth = Month(DateAdd("m", -1, Date))
+			ADay = Day(DateAdd("m", -1, Date))	
+			Calendar1.SetDate AYear, AMonth, ADay
+			Calendar2.Caption = Form.GetHostDate		
+		
+		case 6 	' 3개월
+			AYear = Year(DateAdd("m", -3, Date))
+			AMonth = Month(DateAdd("m", -3, Date))
+			ADay = Day(DateAdd("m", -3, Date))	
+			Calendar1.SetDate AYear, AMonth, ADay
+			Calendar2.Caption = Form.GetHostDate
+
+		case 7 	' 6개월
+			AYear = Year(DateAdd("m", -6, Date))
+			AMonth = Month(DateAdd("m", -6, Date))
+			ADay = Day(DateAdd("m", -6, Date))	
+			Calendar1.SetDate AYear, AMonth, ADay
+			Calendar2.Caption = Form.GetHostDate
+
+		case 8 	' 12개월
+			AYear = Year(DateAdd("m", -12, Date))
+			AMonth = Month(DateAdd("m", -12, Date))
+			ADay = Day(DateAdd("m", -12, Date))	
+			Calendar1.SetDate AYear, AMonth, ADay
+			Calendar2.Caption = Form.GetHostDate
+
+		
+		case 9 	' 연초이후
+			Calendar1.Caption = mid(Form.GetHostDate,1,4) & "0101"
+			Calendar2.Caption = Form.GetHostDate
+		
+		case 10 	' 기간설정
+			Calendar1.Enabled = true
+			Calendar2.Enabled = true	
+	end select
+	set3302_3303()
+End Sub
+Sub CalendarVisible()
+	Calendar1.Enabled = false
+	Calendar2.Enabled = false
+End Sub
+'============================================================================
+Sub TRANMANAGER_SendBefore(szTranID)
+	TeeChart2.ShowGraph "Series0", True
+	select case szTranID
+			case "5445"
+				g_IsReq5445 = True
+				set5445()
+
+			case "5446"
+				set5446()
+				
+			case "3302"
+				requestcancel()
+				TRANMANAGER.SetItemData "3302", "InBlock", "업종코드", 0, ""
+				TRANMANAGER.SetItemData "3302", "InBlock", "그룹코드", 0, ""
+				TRANMANAGER.SetItemData "3302", "InBlock", "옵션구분", 0, ""
+				
+				nSel = Combo1.GetCurSel 
+				select case nSel
+						case 0
+							TRANMANAGER.SetItemData "3302", "InBlock", "업종코드", 0, Combo3.GetCellString( Combo3.GetCurSel, 0)
+							g_code = Combo3.GetCellString( Combo3.GetCurSel(), 0)
+							Label3.Caption = Combo3.GetCellString ( Combo3.GetCurSel, 1)
+							Label6.Caption = Combo3.GetCellString ( Combo3.GetCurSel, 1)
+						case 1
+							TRANMANAGER.SetItemData "3302", "InBlock", "업종코드", 0, Combo2.GetCellString( Combo2.GetCurSel, 0)
+							g_code = Combo2.GetCellString( Combo2.GetCurSel, 0)
+							Label3.Caption = Combo2.GetCellString ( Combo2.GetCurSel, 1)
+							Label6.Caption = Combo2.GetCellString ( Combo2.GetCurSel, 1)		  					
+						case 2
+							TRANMANAGER.SetItemData "3302", "InBlock", "상품코드", 0, Combo4.GetCellString( Combo4.GetCurSel, 0)
+							TRANMANAGER.SetItemData "3302", "InBlock", "그룹코드", 0, "C"
+							TRANMANAGER.SetItemData "3302", "InBlock", "옵션구분", 0, "2"
+							g_sangpum = Combo4.GetCellString( Combo4.GetCurSel, 0)
+							g_group = "C"
+							g_option = "2"
+							Label3.Caption = Combo4.GetCellString ( Combo4.GetCurSel, 1)
+							Label6.Caption = Combo4.GetCellString ( Combo4.GetCurSel, 1)
+						case 3
+							TRANMANAGER.SetItemData "3302", "InBlock", "상품코드", 0, Combo8.GetCellString( Combo8.GetCurSel, 0)
+							g_sangpum = Combo8.GetCellString( Combo8.GetCurSel, 0)
+							'if Combo8.GetCurSel() = 0 then
+							'elseif Combo8.GetCurSel() = 1 then
+							'	TRANMANAGER.SetItemData "3302", "InBlock", "그룹코드", 0, "F"
+							'	g_group = "F"
+							'end if
+							TRANMANAGER.SetItemData "3302", "InBlock", "그룹코드", 0, "F"
+							g_group = "F"								
+							TRANMANAGER.SetItemData "3302", "InBlock", "옵션구분", 0, "2"
+							g_option = "2"
+							Label3.Caption = Combo8.GetCellString ( Combo8.GetCurSel, 1)
+							Label6.Caption = Combo8.GetCellString ( Combo8.GetCurSel, 1)
+						case 4
+							TRANMANAGER.SetItemData "3302", "InBlock", "상품코드", 0, Combo9.GetCellString( Combo9.GetCurSel, 0)
+							TRANMANAGER.SetItemData "3302", "InBlock", "그룹코드", 0, "C"
+							
+							g_sangpum = Combo9.GetCellString( Combo9.GetCurSel, 0)
+							g_group = "C"
+							g_option = "2"
+							if Combo9.GetCurSel = 3 then
+								TRANMANAGER.SetItemData "3302", "InBlock", "옵션구분", 0, "7"
+							else
+								TRANMANAGER.SetItemData "3302", "InBlock", "옵션구분", 0, "2"
+							end if
+							Label3.Caption = Combo9.GetCellString ( Combo9.GetCurSel, 1)						
+							Label6.Caption = Combo9.GetCellString ( Combo9.GetCurSel, 1)						
+						case 5
+							TRANMANAGER.SetItemData "3302", "InBlock", "상품코드", 0, Combo10.GetCellString( Combo10.GetCurSel, 0)
+							TRANMANAGER.SetItemData "3302", "InBlock", "그룹코드", 0, "C"
+							TRANMANAGER.SetItemData "3302", "InBlock", "옵션구분", 0, "2"
+							g_sangpum = Combo10.GetCellString( Combo10.GetCurSel, 0)
+							g_group = "C"
+							g_option = "2"
+							Label3.Caption = Combo10.GetCellString ( Combo10.GetCurSel, 1)						
+							Label6.Caption = Combo10.GetCellString ( Combo10.GetCurSel, 1)
+						case 6
+							TRANMANAGER.SetItemData "3302", "InBlock", "상품코드", 0, Combo13.GetCellString( Combo13.GetCurSel, 0)
+							TRANMANAGER.SetItemData "3302", "InBlock", "그룹코드", 0, "L"
+							TRANMANAGER.SetItemData "3302", "InBlock", "옵션구분", 0, "2"
+							g_sangpum = Combo13.GetCellString( Combo13.GetCurSel, 0)
+							g_group = "L"
+							g_option = "2"
+							Label3.Caption = Combo13.GetCellString ( Combo13.GetCurSel, 1)						
+							Label6.Caption = Combo13.GetCellString ( Combo13.GetCurSel, 1)
+							TeeChart2.ShowGraph "Series0", False
+						case 7
+							TRANMANAGER.SetItemData "3302", "InBlock", "지수구분", 0, "3"
+							 '// 지수구분코드이 한자리로 되어있어 14가 들어가지 않는다 그래서 3번 지수선물에 태웠다
+							TRANMANAGER.SetItemData "3302", "InBlock", "상품코드", 0, Combo15.GetCellString( Combo15.GetCurSel, 0)
+							TRANMANAGER.SetItemData "3302", "InBlock", "그룹코드", 0, "G"
+							TRANMANAGER.SetItemData "3302", "InBlock", "옵션구분", 0, "2"
+							g_sangpum = Combo15.GetCellString( Combo15.GetCurSel, 0)
+							g_group = "G"
+							g_option = "2"
+							Label3.Caption = Combo15.GetCellString ( Combo15.GetCurSel, 1)						
+							Label6.Caption = Combo15.GetCellString ( Combo15.GetCurSel, 1)							
+						case 8
+							TRANMANAGER.SetItemData "3302", "InBlock", "상품코드", 0, Combo11.GetCellString( Combo11.GetCurSel, 0)
+							TRANMANAGER.SetItemData "3302", "InBlock", "그룹코드", 0, "4"
+							g_sangpum =  Combo11.GetCellString( Combo11.GetCurSel, 0)
+							g_group = "4"
+							opt_name = Combo11.GetCellString ( Combo11.GetCurSel , 1)
+
+							if Instr(opt_name, "콜") > 0 Then
+								TRANMANAGER.SetItemData "3302", "InBlock", "옵션구분", 0, "2"
+								g_option = "2"
+							else
+								TRANMANAGER.SetItemData "3302", "InBlock", "옵션구분", 0, "3"
+								g_option = "3"
+							end if
+							Label3.Caption = Combo11.GetCellString ( Combo11.GetCurSel, 1)	
+							Label6.Caption = Combo11.GetCellString ( Combo11.GetCurSel, 1)	
+						case 9
+							TRANMANAGER.SetItemData "3302", "InBlock", "상품코드", 0, Combo12.GetCellString( Combo12.GetCurSel, 0)
+							TRANMANAGER.SetItemData "3302", "InBlock", "그룹코드", 0, "6"
+							
+							if (Combo12.GetCurSel = 0) then
+								TRANMANAGER.SetItemData "3302", "InBlock", "옵션구분", 0, "2"
+								g_option = "2"
+							else
+								TRANMANAGER.SetItemData "3302", "InBlock", "옵션구분", 0, "3"
+								g_option = "3"
+							end if	
+							g_sangpum = Combo12.GetCellString( Combo12.GetCurSel, 0)
+							g_group = "6"
+							Label3.Caption = Combo12.GetCellString ( Combo12.GetCurSel, 1)														
+							Label6.Caption = Combo12.GetCellString ( Combo12.GetCurSel, 1)		
+						case 10,11,12 'ELW/ETF/ETN
+							g_code = Combo1.GetCellString( Combo1.GetCurSel, 1)
+							TRANMANAGER.SetItemData "3302", "InBlock", "업종코드", 0, g_code 
+				end select
+				
+				'/ TeeChart 설정
+				if(g_group = "F" and g_sangpum="04") then
+					setchart_Series_Cont "F", "04"
+				elseif Right(g_sangpum,1) = "N" or Right(g_sangpum,1) = "T"  Then
+					setchart_Series_Cont g_group, g_sangpum
+				elseif g_group = "4" and Left(g_sangpum,1) = "1" Then
+					setchart_Series_Cont g_group, g_sangpum				
+				else
+					setchart_Series_Cont "*", "*"
+				end if
+				
+				if (g_next3302 = 1 ) then
+					g_next3302 = 3
+					GridPro1.ClearAllData 
+					TRANMANAGER.SetItemData "3302" , "InBlock" , "연속시간" , 0 ,"999999"			
+				elseif (g_next3302 = 2) then
+					key = TRANMANAGER.GetItemData ("3302", "OutBlock1", "연속시간", 0)
+					TRANMANAGER.SetItemData "3302","InBlock","연속시간",0,key
+				end if				
+			case "3303"
+				requestcancel()
+				
+				if (Combo5.GetCurSel( ) = 0) then
+					TRANMANAGER.SetItemData "3303" , "InBlock" , "누적타입" , 0 , "0"
+				else
+					TRANMANAGER.SetItemData "3303" , "InBlock" , "누적타입" , 0 , "1"
+				end if	
+				
+				nSel = Combo1.GetCurSel 
+				select case nSel
+						case 0
+							TRANMANAGER.SetItemData "3303", "InBlock", "업종코드", 0, Combo3.GetCellString( Combo3.GetCurSel, 0)
+							g_code = Combo3.GetCellString( Combo3.GetCurSel, 0)
+							Label3.Caption = Combo3.GetCellString ( Combo3.GetCurSel, 1)
+							Label6.Caption = Combo3.GetCellString ( Combo3.GetCurSel, 1)
+						case 1
+							TRANMANAGER.SetItemData "3303", "InBlock", "업종코드", 0, Combo2.GetCellString( Combo2.GetCurSel, 0)
+							g_code = Combo2.GetCellString( Combo2.GetCurSel, 0)
+							Label3.Caption = Combo2.GetCellString ( Combo2.GetCurSel, 1)
+							Label6.Caption = Combo2.GetCellString ( Combo2.GetCurSel, 1)							
+						case 2
+							TRANMANAGER.SetItemData "3303", "InBlock", "상품코드", 0, Combo4.GetCellString( Combo4.GetCurSel, 0)
+							TRANMANAGER.SetItemData "3303", "InBlock", "그룹코드", 0, "C"
+							TRANMANAGER.SetItemData "3303", "InBlock", "옵션구분", 0, "2"
+							g_sangpum = Combo4.GetCellString( Combo4.GetCurSel, 0)
+							g_group = "C"
+							g_option = "2"
+							Label3.Caption = Combo4.GetCellString ( Combo4.GetCurSel, 1)
+							Label6.Caption = Combo4.GetCellString ( Combo4.GetCurSel, 1)							
+						case 3
+							TRANMANAGER.SetItemData "3303", "InBlock", "상품코드", 0, Combo8.GetCellString( Combo8.GetCurSel, 0)
+							g_sangpum = Combo8.GetCellString( Combo8.GetCurSel, 0)
+							'if Combo8.GetCurSel() = 0 then
+							'	TRANMANAGER.SetItemData "3303", "InBlock", "그룹코드", 0, "F"
+							'	g_group = "F"
+							'elseif Combo8.GetCurSel() = 1 then					
+							'end if								
+							TRANMANAGER.SetItemData "3303", "InBlock", "그룹코드", 0, "F"
+							g_group = "F"
+							TRANMANAGER.SetItemData "3303", "InBlock", "옵션구분", 0, "2"
+							g_option = "2"
+							Label3.Caption = Combo8.GetCellString ( Combo8.GetCurSel, 1)
+							Label6.Caption = Combo8.GetCellString ( Combo8.GetCurSel, 1)							
+						case 4
+							TRANMANAGER.SetItemData "3303", "InBlock", "상품코드", 0, Combo9.GetCellString( Combo9.GetCurSel, 0)
+							TRANMANAGER.SetItemData "3303", "InBlock", "그룹코드", 0, "C"
+							TRANMANAGER.SetItemData "3303", "InBlock", "옵션구분", 0, "2"
+							g_sangpum = Combo9.GetCellString( Combo9.GetCurSel, 0)
+							g_group = "C"
+							if Combo9.GetCurSel = 3 then
+								TRANMANAGER.SetItemData "3303", "InBlock", "옵션구분", 0, "7"
+							else
+								TRANMANAGER.SetItemData "3303", "InBlock", "옵션구분", 0, "2"
+							end if
+							Label3.Caption = Combo9.GetCellString ( Combo9.GetCurSel, 1)						
+							Label6.Caption = Combo9.GetCellString ( Combo9.GetCurSel, 1)													
+						case 5
+							TRANMANAGER.SetItemData "3303", "InBlock", "상품코드", 0, Combo10.GetCellString( Combo10.GetCurSel, 0)
+							TRANMANAGER.SetItemData "3303", "InBlock", "그룹코드", 0, "C"
+							TRANMANAGER.SetItemData "3303", "InBlock", "옵션구분", 0, "2"
+							g_sangpum = Combo10.GetCellString( Combo10.GetCurSel, 0)
+							g_group = "C"
+							g_option = "2"
+							Label3.Caption = Combo10.GetCellString ( Combo10.GetCurSel, 1)						
+							Label6.Caption = Combo10.GetCellString ( Combo10.GetCurSel, 1)													
+						case 6
+							TRANMANAGER.SetItemData "3303", "InBlock", "상품코드", 0, Combo13.GetCellString( Combo13.GetCurSel, 0)
+							TRANMANAGER.SetItemData "3303", "InBlock", "그룹코드", 0, "L"
+							TRANMANAGER.SetItemData "3303", "InBlock", "옵션구분", 0, "2"
+							g_sangpum = Combo13.GetCellString( Combo13.GetCurSel, 0)
+							g_group = "L"
+							g_option = "2"
+							Label3.Caption = Combo13.GetCellString ( Combo13.GetCurSel, 1)
+							Label6.Caption = Combo13.GetCellString ( Combo13.GetCurSel, 1)							
+							TeeChart2.ShowGraph "Series0", False
+						case 7
+							TRANMANAGER.SetItemData "3303", "InBlock", "지수구분", 0, "3"
+							 '// 지수구분코드이 한자리로 되어있어 14가 들어가지 않는다 그래서 3번 지수선물에 태웠다						
+							TRANMANAGER.SetItemData "3303", "InBlock", "상품코드", 0, Combo15.GetCellString( Combo15.GetCurSel, 0)
+							TRANMANAGER.SetItemData "3303", "InBlock", "그룹코드", 0, "G"
+							TRANMANAGER.SetItemData "3303", "InBlock", "옵션구분", 0, "2"
+							g_sangpum = Combo15.GetCellString( Combo15.GetCurSel, 0)
+							g_group = "G"
+							g_option = "2"
+							Label3.Caption = Combo15.GetCellString ( Combo15.GetCurSel, 1)						
+							Label6.Caption = Combo15.GetCellString ( Combo15.GetCurSel, 1)								
+						case 8
+							TRANMANAGER.SetItemData "3303", "InBlock", "상품코드", 0, Combo11.GetCellString( Combo11.GetCurSel, 0)
+							TRANMANAGER.SetItemData "3303", "InBlock", "그룹코드", 0, "4"
+							g_sangpum = Combo11.GetCellString( Combo11.GetCurSel, 0)
+							g_group = "4"
+							opt_name = Combo11.GetCellString ( Combo11.GetCurSel , 1)
+
+							if Instr(opt_name, "콜") > 0 Then
+								TRANMANAGER.SetItemData "3303", "InBlock", "옵션구분", 0, "2"
+								g_option = "2"
+							else
+								TRANMANAGER.SetItemData "3303", "InBlock", "옵션구분", 0, "3"
+								g_option = "3"
+							end if
+
+							Label3.Caption = Combo11.GetCellString ( Combo11.GetCurSel, 1)	
+							Label6.Caption = Combo11.GetCellString ( Combo11.GetCurSel, 1)								
+						case 9
+							TRANMANAGER.SetItemData "3303", "InBlock", "상품코드", 0, Combo12.GetCellString( Combo12.GetCurSel, 0)
+							TRANMANAGER.SetItemData "3303", "InBlock", "그룹코드", 0, "6"
+							TRANMANAGER.SetItemData "3303", "InBlock", "옵션구분", 0, "3"
+							g_sangpum = Combo12.GetCellString( Combo12.GetCurSel, 0)
+							g_group = "6"
+							g_option = "3"
+							Label3.Caption = Combo12.GetCellString ( Combo12.GetCurSel, 1)														
+							Label6.Caption = Combo12.GetCellString ( Combo12.GetCurSel, 1)
+						case 10, 11, 12 'ELW/ETF/ETN
+							g_code = Combo1.GetCellString( Combo1.GetCurSel, 1)
+							TRANMANAGER.SetItemData "3303", "InBlock", "업종코드", 0, g_code
+													
+				end select
+				
+				'/ TeeChart 설정
+				if(g_group = "F" and g_sangpum="04") then
+					setchart_Series_Cont "F", "04"
+				elseif Right(g_sangpum,1) = "N" or Right(g_sangpum,1) = "T" Then
+					setchart_Series_Cont g_group, g_sangpum
+				elseif g_group = "4" and Left(g_sangpum,1) = "1" Then
+					setchart_Series_Cont g_group, g_sangpum	
+				else
+					setchart_Series_Cont "*", "*"
+				end if
+				
+				if (g_next3303 = 1 ) then
+					g_next3303 = 3
+					GridPro3.ClearAllData 
+					TRANMANAGER.SetItemData "3303" , "InBlock" , "연속일자" , 0 ,"99999999"
+				elseif (g_next3303 = 2) then
+					key = TRANMANAGER.GetItemData ("3303", "OutBlock1", "연속일자", 0)
+					TRANMANAGER.SetItemData "3303","InBlock","연속일자",0,key
+				end if
+		case "3698" ' 선물전체
+			TRANMANAGER.SetItemData  "3698" , "InBlock" , "그룹구분" , 0 , "A"
+			TRANMANAGER.SetItemData  "3698" , "InBlock" , "상품구분" , 0 , "A"
+		case "3797" ' 지수옵션
+			TRANMANAGER.SetItemData  "3797" , "InBlock" , "그룹구분" , 0 , "4"
+			TRANMANAGER.SetItemData  "3797" , "InBlock" , "상품구분" , 0 , "01"
+		case "3797_2" ' 지수옵션 나머지	
+			cmmdcd = Combo11.GetCellString (Combo11.GetCurSel , 0)		
+
+			TRANMANAGER.SetItemData  "3797_2" , "InBlock" , "그룹구분" , 0 , "4"	
+			TRANMANAGER.SetItemData  "3797_2" , "InBlock" , "상품구분" , 0 , cmmdcd
+			
+		case "3797_1" ' 통화옵션
+			TRANMANAGER.SetItemData  "3797_1" , "InBlock" , "그룹구분" , 0 , "6"
+			TRANMANAGER.SetItemData  "3797_1" , "InBlock" , "상품구분" , 0 , "75"
+	end select
+End Sub
+
+'============================================================================
+Sub Combo2_OnEditFull()
+	set3302_3303()
+	Label()
+End Sub
+'============================================================================
+Sub Combo2_OnListSelChanged(iIndex)
+	set3302_3303()
+End Sub
+'============================================================================
+Sub Combo2_OnEditEnter()
+	set3302_3303()
+End Sub
+'============================================================================
+Sub Combo3_OnListSelChanged(iIndex)
+	set3302_3303()
+End Sub
+'============================================================================
+Sub Combo3_OnEditFull()
+	set3302_3303()
+End Sub
+'============================================================================
+Sub Combo3_OnEditEnter()
+	set3302_3303()
+End Sub
+'============================================================================
+Sub TRANMANAGER_ReceiveComplete(szTranID)
+	select case szTranID
+			case "4002"
+				select case g_linkcombo6
+					case 0
+						Combo1_OnListSelChanged(Combo1.GetCurSel( ))
+						Combo6_OnListSelChanged(Combo6.GetCurSel( ))
+						Combo7_OnListSelChanged(Combo7.GetCurSel( ))
+					case 5
+						g_isrequest = 0
+						Combo6.SetCurSel(10)
+						Combo6_OnListSelChanged(10)
+						Combo7.SetCurSel(6)
+						Combo7_OnListSelChanged(6)
+						RadioGroup1.SetCheckAt(1)
+						Combo5.SetCurSel(1)
+						Combo5_OnListSelChanged(1)
+						g_isrequest = 1
+						Combo1.SetCurSel(2)
+						Combo1_OnListSelChanged(2)
+					case 15	
+						Combo6.SetCurSel(10)
+						Combo6_OnListSelChanged(10)
+						Combo7.SetCurSel(7)
+						Combo7_OnListSelChanged(7)						
+					
+				end select
+
+	
+			case "3302"
+				if( g_next3302 = 3 ) then
+					g_next3302 = 1
+					GridPro1.CurRow = 0
+				end if
+				
+				setSum()	
+				SetGraphData()
+				Label5.Caption = Combo5.GetCellString ( Combo5.GetCurSel() , 1) & "(기간누적)"
+				Label4.Caption = "일중추이(상단 투자자 타이틀 클릭 시 추가/삭제 가능)"
+				requestreal()
+			case "3303"
+				if( g_next3303 = 3 ) then
+					g_next3303 = 1
+					GridPro3.CurRow = 0
+				end if
+				
+'				GridPro4.InsertEmptyRow  1 , 1 , true , false
+'				for i = 0 to 15
+'					GridPro4.SetCellString  1 , 0, i , GridPro4.GetCellString( 0, 0 , i )		
+'				next
+				Label5.Caption = Combo5.GetCellString ( Combo5.GetCurSel() , 1) & "(기간누적)"
+				setSum2()
+				SetGraphData()				
+				Label4.Caption = "일별추이(상단 투자자 타이틀 클릭 시 추가/삭제 가능)"
+				requestreal()
+			case "5445"
+				g_IsReq5445 = False
+			case "3698" ' 선물전체
+				TRANMANAGER.RequestData  "3797"
+			case "3797" ' 지수옵션
+				TRANMANAGER.RequestData  "3797_2"
+			case "3797_2" ' 미니 지수옵션
+				g_ReceiveCompleteFlag = 1
+				requestreal()			
+				TRANMANAGER.RequestData  "3797_1"	
+			'case "3797_1" ' 통화옵션
+
+	end select
+End Sub
+
+Sub setSum()
+	GridPro2.InsertEmptyRow  1 , 1 , true , false
+	for i = 0 to 14
+		GridPro2.SetCellString  1 , 0, i , GridPro2.GetCellString( 0, 0 , i )		
+	next
+End Sub
+
+Sub setSum2()
+	GridPro4.InsertEmptyRow  1 , 1 , true , false
+ 	gridilja = GridPro3.GetCellString(0 , 0 , 0)
+	if (LEN(gridilja) = 0) then
+	 	gridilja = "0"
+	end if
+	
+	for i = 2 to 15
+		if (Combo6.GetCurSel( ) >= 10) then
+			if (Combo5.GetCurSel( ) = 0) then	' 순매수누적
+				GridPro4.SetCellString  1 , 0, i-1 , GridPro3.GetCellString( 1, 0 , i )
+			else
+				 ' 당일만큼을 누적에서 빼준다
+				 if (CLng(gridilja) = CLng(Form.GetHostDate())) then
+					GridPro4.SetCellString  1 , 0, i-1 , GridPro4.GetCellString( 0, 0 , i-1 )	 - GridPro3.GetCellString( 0, 0 , i )
+'				 	msgbox GridPro3.GetCellString( 0, 0 , i ) & "/" & GridPro4.GetCellString( 0, 0 , i-1 )	 & "/" & GridPro4.GetCellString( 1, 0 , i-1 )	
+				 else
+					GridPro4.SetCellString  1 , 0, i-1 , GridPro4.GetCellString( 0, 0 , i-1 )		
+				 end if
+			
+			end if	 
+		else	 
+			GridPro4.SetCellString  1 , 0, i-1 , GridPro4.GetCellString( 0, 0 , i-1 )		
+		end if
+	next
+End Sub
+
+
+'============================================================================
+Sub Combo6_OnListSelChanged(iIndex)
+	if iIndex > 9 then
+'		Combo5.SetCurSel(1)
+		Combo14.Enabled = True
+		Combo7.SetCurSel(6)		
+		Combo7_OnListSelChanged(6)
+	else
+'		Combo5.SetCurSel(0)
+		Combo14.SetCurSel 0
+		Combo14.Caption = Combo14.GetCellString( Combo14.GetCurSel, 0 )
+		Combo14.Enabled = False		
+		Combo7.SetCurSel(0)		
+		Combo7_OnListSelChanged(0)
+	end if
+	if iIndex < 10 then
+		GridPro1.Visible = true
+		GridPro2.Visible = true
+		GridPro3.Visible = false
+		GridPro4.Visible = false
+		Combo7.Enabled = false
+		GridPro_Title.SetTopHeadTitle 0 , 0 , 0 , "시간"
+	else
+		GridPro1.Visible = false
+		GridPro2.Visible = false
+		GridPro3.Visible = true
+		GridPro4.Visible = true
+		Combo7.Enabled = true
+		GridPro_Title.SetTopHeadTitle 0 , 0 , 0 , "일자"
+	end if
+
+	setchartgap()
+	set3302_3303()
+End Sub
+
+Sub setchartgap()
+	select case Combo6.GetCurSel( )
+		case 0,1,2,3,4,5,6,7,8,9
+			for i = 0 to 14
+				select case Combo6.GetCurSel( )
+					case 0
+						TeeChart2.SetExtTimeSeriesInterval "Series" & CStr(i) , "Time" , "초" , "30"
+					case 1
+						TeeChart2.SetExtTimeSeriesInterval "Series" & CStr(i) , "Time" , "분" , "1"
+					case 2
+						TeeChart2.SetExtTimeSeriesInterval "Series" & CStr(i) , "Time" , "분" , "2"
+					case 3
+						TeeChart2.SetExtTimeSeriesInterval "Series" & CStr(i) , "Time" , "분" , "3"
+					case 4
+						TeeChart2.SetExtTimeSeriesInterval "Series" & CStr(i) , "Time" , "분" , "5"
+					case 5
+						TeeChart2.SetExtTimeSeriesInterval "Series" & CStr(i) , "Time" , "분" , "10"
+					case 6
+						TeeChart2.SetExtTimeSeriesInterval "Series" & CStr(i) , "Time" , "분" , "15"
+					case 7
+						TeeChart2.SetExtTimeSeriesInterval "Series" & CStr(i) , "Time" , "분" , "20"
+					case 8
+						TeeChart2.SetExtTimeSeriesInterval "Series" & CStr(i) , "Time" , "분" , "30"						
+					case 9
+						TeeChart2.SetExtTimeSeriesInterval "Series" & CStr(i) , "Time" , "분" , "60"																		
+				end select
+			next		
+		case else
+			for i = 0 to 14
+				TeeChart2.SetExtTimeSeries "Series" & CStr(i) , "Date" , "일"
+			next		
+	end select
+End Sub
+
+Sub set3302_3303()
+	if (g_isrequest <> 1) then
+		exit sub
+	end if
+	
+		
+	g_next3302 = 1
+	g_next3303 = 1
+
+	GridPro1.DeleteAllRow( )
+	GridPro3.DeleteAllRow( )
+
+	if Combo6.GetCurSel() < 10 then
+		g_next3302 = 1
+		TRANMANAGER.RequestData "3302"
+		Table2.Visible = false
+		Table3.Visible = true
+		if g_IsReq5445 then
+			Exit Sub
+		end if
+		TRANMANAGER.RequestData "5445"
+	else
+		g_next3303 = 1
+		TRANMANAGER.RequestData "3303"
+		Table2.Visible = true
+		Table3.Visible = false		
+		TRANMANAGER.RequestData "5446"
+	end if
+end sub			
+'============================================================================
+Sub RadioGroup1_OnClick(nIndex)
+	set3302_3303()
+End Sub
+'============================================================================
+Sub Combo5_OnListSelChanged(iIndex)
+	set3302_3303()
+End Sub
+'============================================================================
+Sub Calendar1_OnEditFull()
+	set3302_3303()
+End Sub
+'============================================================================
+Sub Calendar2_OnEditFull()
+	set3302_3303()
+End Sub
+'============================================================================
+Sub Combo4_OnListSelChanged(iIndex)
+	set3302_3303()
+End Sub
+
+'============================================================================
+Sub Combo4_OnEditEnter()
+	set3302_3303()
+End Sub
+
+'============================================================================
+Sub Combo4_OnEditFull()
+	set3302_3303()
+End Sub
+
+'============================================================================
+Sub Combo8_OnListSelChanged(iIndex)
+	set3302_3303()
+End Sub
+
+'============================================================================
+Sub Combo8_OnEditEnter()
+	set3302_3303()
+End Sub
+
+'============================================================================
+Sub Combo8_OnEditFull()
+	set3302_3303()
+End Sub
+
+'============================================================================
+Sub Combo9_OnListSelChanged(iIndex)
+	set3302_3303()
+End Sub
+
+'============================================================================
+Sub Combo9_OnEditEnter()
+	set3302_3303()
+End Sub
+
+'============================================================================
+Sub Combo9_OnEditFull()
+	set3302_3303()
+End Sub
+
+'============================================================================
+Sub Combo10_OnListSelChanged(iIndex)
+	set3302_3303()
+End Sub
+
+'============================================================================
+Sub Combo10_OnEditEnter()
+	set3302_3303()
+End Sub
+
+'============================================================================
+Sub Combo10_OnEditFull()
+	set3302_3303()
+End Sub
+'============================================================================
+Sub Combo11_OnEditEnter()
+	set3302_3303()
+End Sub
+
+'============================================================================
+Sub Combo11_OnEditFull()
+	set3302_3303()
+End Sub
+
+'============================================================================
+Sub Combo11_OnListSelChanged(iIndex)
+	if iIndex > 0 then 'MINI,KQT150 에 사용
+		TRANMANAGER.RequestData "3797_2"	
+	end if
+	set3302_3303()
+End Sub
+
+'============================================================================
+Sub Combo12_OnListSelChanged(iIndex)
+	set3302_3303()
+End Sub
+
+'============================================================================
+Sub Combo12_OnEditEnter()
+	set3302_3303()
+End Sub
+
+
+'============================================================================
+Sub Combo12_OnEditFull()
+	set3302_3303()
+End Sub
+
+'============================================================================
+Sub Combo13_OnListSelChanged(iIndex)
+	set3302_3303()
+End Sub
+
+'============================================================================
+Sub Combo13_OnEditEnter()
+	set3302_3303()
+End Sub
+
+'============================================================================
+Sub Combo13_OnEditFull()
+	set3302_3303()
+End Sub
+
+
+'============================================================================
+Sub Combo15_OnListSelChanged(iIndex)
+	set3302_3303()
+End Sub
+
+'============================================================================
+Sub Combo15_OnEditEnter()
+	set3302_3303()
+End Sub
+
+'============================================================================
+Sub Combo15_OnEditFull()
+	set3302_3303()
+End Sub
+
+'============================================================================
+Sub GridPro1_OnBottomRowReached()
+	if (TRANMANAGER.IsMoreNextData("3302") = true) AND (g_next3302 <> 3) then
+		g_next3302 = 2
+		TRANMANAGER.RequestNextData "3302"
+	end if
+End Sub
+'============================================================================
+Sub GridPro3_OnBottomRowReached()
+	if (TRANMANAGER.IsMoreNextData("3303") = true) AND (g_next3303 <> 3) then
+		g_next3303 = 2
+		TRANMANAGER.RequestNextData "3303"
+	end if
+End Sub
+
+Sub TeeChart()
+	TeeChart3.SetBaseLine "Series" & i , 0
+	TeeChart3.ClearData "Series0"
+	
+	for i = 0 to 11
+		data = GridPro2.GetCellString (0 , 0 , i + 1)
+		if Len(data) = 0 then
+			data = 0 
+		end if
+		
+		if data > 0 then
+			TeeChart3.AddXY "Series0"  , i + 1 , data ,  getlabelname(g_label(i)), RGB(255,0,0)
+		elseif data < 0 then
+			TeeChart3.AddXY "Series0"  , i + 1 , data , getlabelname(g_label(i)), RGB(0,0,255)			
+		elseif data = 0 then
+			TeeChart3.AddXY "Series0"  , i + 1 , data , getlabelname(g_label(i)), RGB(255,255,255)
+		end if
+	next
+
+End Sub
+'============================================================================
+Sub Table3_OnDblClick(lRow , lColumn)
+	
+	select case Combo1.GetCurSel
+		case 0
+				code = Combo3.GetCellString( Combo3.GetCurSel, 0)
+				Form.SetLinkVar "MARKET"  , "1"
+				Form.SetLinkVar "CODE"  , code
+				Form.OpenScreen("3200")
+		case 1
+				code = Combo2.GetCellString( Combo2.GetCurSel, 0)
+				Form.SetLinkVar "MARKET"  , "7"
+				Form.SetLinkVar "CODE"  , code
+				Form.OpenScreen("3200")
+		case 2
+				code = Combo2.GetCellString( Combo4.GetCurSel, 0)
+				Form.SetLinkVar "FUTURE_CODE"  , g_linkcode
+				Form.OpenScreen("3600")
+		case 3
+				code = Combo8.GetCellString( Combo8.GetCurSel, 0)
+				Form.SetLinkVar "FUTURE_CODE"  , g_linkcode
+				Form.OpenScreen("3600")
+		case 4
+				code = Combo9.GetCellString( Combo9.GetCurSel, 0)
+				Form.SetLinkVar "FUTURE_CODE"  , g_linkcode
+				Form.OpenScreen("3600")
+		case 5
+				code = Combo10.GetCellString( Combo10.GetCurSel, 0)
+				Form.SetLinkVar "FUTURE_CODE"  , g_linkcode
+				Form.OpenScreen("3600")
+				
+		case 6
+				code = Combo13.GetCellString( Combo13.GetCurSel, 0)
+				Form.SetLinkVar "FUTURE_CODE"  , g_linkcode
+				Form.OpenScreen("3600")
+								
+		case 7
+				code = Combo15.GetCellString( Combo15.GetCurSel, 0)
+				Form.SetLinkVar "FUTURE_CODE"  , g_linkcode
+				Form.OpenScreen("3600")				
+				
+		case 8
+				code = Combo11.GetCellString( Combo11.GetCurSel, 0)
+				Form.SetLinkVar "OPTION_CODE"  , g_linkcode
+				Form.OpenScreen("3710")
+		case 9
+				code = Combo12.GetCellString( Combo12.GetCurSel, 0)
+				Form.SetLinkVar "OPTION_CODE"  , g_linkcode
+				Form.OpenScreen("3710")
+		end select
+End Sub
+'============================================================================
+Sub FEEDMANAGER_Receive(szTranID)
+	select case szTranID				
+			case "STIV1"		' 업종투자자
+				setSTIV1()
+
+			case "FUTINV", "FTIV3", "FTIV4"		' 선물투자자		
+				setFUTINV(szTranID)
+				
+			case "OPTINV"		' 옵션투자자
+				setOPTINV()
+				
+			case "STCL1"		' 업종현재지수
+				setSTCL1()
+			
+			case "FUTEXEC"		' 선물현재지수
+				setFUTEXEC()
+				
+			case "OPTEXEC"		' 옵션현재지수
+				setOPTEXEC()
+	end select
+	
+End Sub
+
+Function gettujajaindex(code)
+	col = -1
+	if code = "9000" then '외국인합
+		col = 2
+	elseif code = "8000" then '개인
+		col = 3
+	elseif code = "T010" then '기관계
+		col = 4
+	elseif code = "1000" then '증권
+		col = 5
+	elseif code = "2000" then '보험
+		col = 6
+	elseif code = "3000" then '투신
+		col = 7
+	elseif code = "3100" then '사모펀드
+		col = 8
+	elseif code = "4000" then '은행
+		col = 9
+	elseif code = "5000" then '종금
+		col = 10
+	elseif code = "6000" then '기금
+		col = 11
+	elseif code = "7000" then '정부
+		col = 12
+	elseif code = "7100" then '기타법인
+		col = 13
+	elseif code = "9001" then '외국인
+		col = 14
+	elseif code = "9002" then '기타외국인
+		col = 15
+	end if
+	gettujajaindex = col
+End Function
+
+Sub setSTIV1()
+	tujajacode = FEEDMANAGER.GetItemData ("STIV1", "OutBlock", "투자자코드", 0)
+	upjong = FEEDMANAGER.GetItemData ("STIV1", "OutBlock", "업종코드", 0)
+
+	if RadioGroup1.GetCheckIndex() = 0 then
+		select case Combo5.GetCurSel()	
+				case 0		'순매수누적금액
+					strmoney = FEEDMANAGER.GetItemData ("STIV1", "OutBlock", "순매수거래대금", 0)
+					giganamt = FEEDMANAGER.GetItemData ("STIV1", "OutBlock", "순매수거래대금", 0)
+				case 1		'순매수증감금액
+					strmoney = FEEDMANAGER.GetItemData ("STIV1", "OutBlock", "순매수거래대금직전대비", 0)
+					giganamt = FEEDMANAGER.GetItemData ("STIV1", "OutBlock", "순매수거래대금", 0)
+				case 2		'매도금액
+					strmoney = FEEDMANAGER.GetItemData ("STIV1", "OutBlock", "매도거래대금", 0)
+					giganamt = FEEDMANAGER.GetItemData ("STIV1", "OutBlock", "매도거래대금", 0)
+				case 3		'매수금액
+					strmoney = FEEDMANAGER.GetItemData ("STIV1", "OutBlock", "매수거래대금",0)
+					giganamt = FEEDMANAGER.GetItemData ("STIV1", "OutBlock", "매수거래대금",0)
+		end select
+	elseif RadioGroup1.GetCheckIndex() = 1 then
+		select case Combo5.GetCurSel()	
+				case 0		'순매수누적수량
+					strmoney = FEEDMANAGER.GetItemData ("STIV1", "OutBlock", "순매수거래량", 0)
+					giganamt = FEEDMANAGER.GetItemData ("STIV1", "OutBlock", "순매수거래량", 0)
+				case 1		'순매수증감수량
+					strmoney = FEEDMANAGER.GetItemData ("STIV1", "OutBlock", "순매수거래량직전대비", 0)
+					giganamt = FEEDMANAGER.GetItemData ("STIV1", "OutBlock", "순매수거래량", 0)
+				case 2		'매도수량
+					strmoney = FEEDMANAGER.GetItemData ("STIV1", "OutBlock", "매도거래량", 0)
+					giganamt = FEEDMANAGER.GetItemData ("STIV1", "OutBlock", "매도거래량", 0)
+				case 3		'매수수량
+					strmoney = FEEDMANAGER.GetItemData ("STIV1", "OutBlock", "매수거래량", 0)
+					giganamt = FEEDMANAGER.GetItemData ("STIV1", "OutBlock", "매수거래량", 0)
+		end select
+	end if
+	
+	col = gettujajaindex(tujajacode)
+
+	' 그리드에 insert또는 update한다			
+	ilja = FEEDMANAGER.GetItemData ("STIV1", "OutBlock", "일자", 0)
+	time2 = FEEDMANAGER.GetItemData ("STIV1", "OutBlock", "시간", 0)
+	if (checktime(time2) = -1) then
+		exit sub
+	end if
+
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		c0 = time2
+	else
+		c0 = ilja
+	end if
+	
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		if (GridPro1.BodyRowCount < 1) then
+			GridPro1.InsertEmptyRow  0 , 1 , true , true
+			GridPro1.RealUpdateRowData  settimegapSS(c0,30) , 0 , 0 , 0 , true					' 시간
+			GridPro1.RealUpdateRowData  strmoney , 0 , col , col , true			' 투자자
+			GridPro2.RealUpdateRowData  strmoney , 0 , col-1 , col-1 , true		' 투자자
+			exit sub
+		end if	
+	end if
+	
+	
+	time2 = setinsert(ilja,time2)
+	' 당일
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		
+		' 순매수증감
+		if (Combo5.GetCurSel() = 1) then
+			' 증감을 계산한다
+			jeunggam = trim(GridPro2.GetCellString(0 , 0 , col-1 ))
+			if (LEN(jeunggam) = 0) then
+				jeunggam = "0"
+			end if	
+			jeunggam = CLng(giganamt) - CLng(jeunggam)
+			
+			before = trim(GridPro1.GetCellString(0 , 0 , col ))
+			if (LEN(before) = 0) then
+				before = "0"
+			end if
+				
+			GridPro1.RealUpdateRowData  time2 , 0 , 0 , 0 , true					' 시간
+			GridPro1.RealUpdateRowData  CLng(before) + CLng(jeunggam)  , 0 , col , col , true			' 증감
+			chartamt = CLng(before) + CLng(jeunggam)
+		else	' 누적
+			GridPro1.RealUpdateRowData  time2 , 0 , 0 , 0 , true									' 시간
+			GridPro1.RealUpdateRowData  giganamt , 0 , col , col , true								' 누적
+			chartamt = giganamt
+		end if	
+		GridPro2.RealUpdateRowData  giganamt , 0 , col-1 , col-1 , true		' 투자자		
+	else
+			
+		amt = trim(GridPro4.GetCellString(1 , 0 , col-1 ))
+		' 무조건 기간누적
+		if (LEN(amt) = 0) then
+			amt = "0"
+		end if
+		
+		if Combo14.GetCurSel = 1 then
+			if Combo1.GetCurSel >= 0 and Combo1.GetCurSel <= 1 then
+				Num = 1000
+			else
+				if RadioGroup1.GetCheckIndex = 1 then
+					Num = 1
+				else
+					Num = 1000
+				end if
+			end if
+		else
+			Num = 1
+		end if
+		
+		' 순매수증감
+		if (Combo5.GetCurSel() = 1) then
+			GridPro3.RealUpdateRowData  ilja , 0 , 0 , 0 , true									' 일자
+			GridPro3.RealUpdateRowData  ROUND(giganamt/Num) , 0 , col , col , true							' 증감
+			chartamt = giganamt
+		elseif (Combo5.GetCurSel() = 0) then
+			GridPro3.RealUpdateRowData  ilja , 0 , 0 , 0 , true									' 일자
+			GridPro3.RealUpdateRowData  ROUND(giganamt/Num) + CLng(amt) , 0 , col , col , true		' 누적
+			chartamt = CLng(giganamt) + CLng(amt)
+		else
+			GridPro3.RealUpdateRowData  ilja , 0 , 0 , 0 , true									' 일자
+			GridPro3.RealUpdateRowData  ROUND(giganamt/Num) , 0 , col , col , true		' 누적
+			chartamt = CLng(giganamt)
+		end if
+		
+		GridPro4.RealUpdateRowData  ROUND(giganamt/Num) + CLng(amt) , 0 , col-1 , col-1 , true		' 누적
+	end if
+	
+	
+	SetGraphData()	
+	
+	seriesname = ""
+	seriesname = getseriesname(col)
+	
+	if (seriesname = "") then
+		exit sub
+	end if
+			
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		SetGraphReal seriesname,time2,chartamt,time2,0
+	else 
+		SetGraphReal seriesname,ilja,chartamt,ilja,0
+	end if
+	
+End Sub
+
+
+
+Sub setFUTINV(szTranID)
+	tujajacode = FEEDMANAGER.GetItemData (szTranID, "OutBlock", "투자자코드", 0)
+	sangpumcode = FEEDMANAGER.GetItemData (szTranID, "OutBlock", "상품코드", 0)
+				
+	if RadioGroup1.GetCheckIndex() = 0 then
+		select case Combo5.GetCurSel()	
+				case 0		'순매수누적금액
+					strmoney = FEEDMANAGER.GetItemData (szTranID, "OutBlock", "순약정금액", 0)/1000000
+					giganamt = FEEDMANAGER.GetItemData (szTranID, "OutBlock", "순약정금액", 0)/1000000					
+				case 1		'순매수증감금액
+					strmoney = FEEDMANAGER.GetItemData (szTranID, "OutBlock", "순약정금액", 0)/1000000		
+					giganamt = FEEDMANAGER.GetItemData (szTranID, "OutBlock", "순약정금액", 0)/1000000		
+				case 2		'매도금액
+					strmoney = FEEDMANAGER.GetItemData (szTranID, "OutBlock", "매도약정금액", 0)/1000000	
+					giganamt = FEEDMANAGER.GetItemData (szTranID, "OutBlock", "매도약정금액", 0)/1000000	
+				case 3		'매수금액
+					strmoney = FEEDMANAGER.GetItemData (szTranID, "OutBlock", "매수약정금액",0)/1000000	
+					giganamt = FEEDMANAGER.GetItemData (szTranID, "OutBlock", "매수약정금액",0)/1000000	
+		end select
+	elseif RadioGroup1.GetCheckIndex() = 1 then
+		select case Combo5.GetCurSel()	
+				case 0		'순매수누적수량
+					strmoney = FEEDMANAGER.GetItemData (szTranID, "OutBlock", "순약정수량", 0)				
+					giganamt = FEEDMANAGER.GetItemData (szTranID, "OutBlock", "순약정수량", 0)				
+				case 1		'순매수증감수량
+					strmoney = FEEDMANAGER.GetItemData (szTranID, "OutBlock", "순약정수량", 0)				
+					giganamt = FEEDMANAGER.GetItemData (szTranID, "OutBlock", "순약정수량", 0)				
+				case 2		'매도수량
+					strmoney = FEEDMANAGER.GetItemData (szTranID, "OutBlock", "매도약정수량", 0)
+					giganamt = FEEDMANAGER.GetItemData (szTranID, "OutBlock", "매도약정수량", 0)
+				case 3		'매수수량
+					strmoney = FEEDMANAGER.GetItemData (szTranID, "OutBlock", "매수약정수량", 0)				
+					giganamt = FEEDMANAGER.GetItemData (szTranID, "OutBlock", "매수약정수량", 0)				
+		end select
+	end if
+	
+	col = gettujajaindex(tujajacode)
+
+	' 그리드에 insert또는 update한다			
+	ilja = FEEDMANAGER.GetItemData (szTranID, "OutBlock", "일자", 0)
+	time2 = FEEDMANAGER.GetItemData (szTranID, "OutBlock", "시간", 0)
+	time_C = FEEDMANAGER.GetItemData (szTranID, "OutBlock", "시간", 0)	
+
+'	if (checktime(time2) = -1) then
+'		exit sub
+'	end if
+
+
+
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		c0 = time2
+		If c0 >= 240000 Then
+		  c0 = c0- 240000
+		End If
+	else
+		c0 = ilja
+	end if
+	
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		if (GridPro1.BodyRowCount < 1) then
+			GridPro1.InsertEmptyRow  0 , 1 , true , true
+			GridPro1.RealUpdateRowData  settimegapSS(c0,30) , 0 , 0 , 0 , true					' 시간
+			GridPro1.RealUpdateRowData  strmoney , 0 , col , col , true			' 투자자
+			GridPro2.RealUpdateRowData  strmoney , 0 , col-1 , col-1 , true		' 투자자
+			set9000(tujajacode)
+			exit sub
+		end if	
+	end if
+	
+	
+	time2 = setinsert(ilja,time2)
+
+	' 당일
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		
+		' 순매수증감
+		if (Combo5.GetCurSel() = 1) then
+			' 증감을 계산한다
+			jeunggam = trim(GridPro2.GetCellString(0 , 0 , col-1 ))
+			if (LEN(jeunggam) = 0) then
+				jeunggam = "0"
+			end if	
+			jeunggam = CLng(giganamt) - CLng(jeunggam)
+			
+			before = trim(GridPro1.GetCellString(0 , 0 , col ))
+			if (LEN(before) = 0) then
+				before = "0"
+			end if
+
+				
+			GridPro1.RealUpdateRowData  time2 , 0 , 0 , 0 , true					' 시간
+			GridPro1.RealUpdateRowData  CLng(before) + CLng(jeunggam)  , 0 , col , col , true			' 증감
+			chartamt = CLng(before) + CLng(jeunggam)
+		else	' 누적
+			GridPro1.RealUpdateRowData  time2 , 0 , 0 , 0 , true									' 시간
+			GridPro1.RealUpdateRowData  giganamt , 0 , col , col , true								' 누적
+			chartamt = giganamt
+		end if	
+		GridPro2.RealUpdateRowData  giganamt , 0 , col-1 , col-1 , true		' 투자자		
+		set9000(tujajacode)
+		
+	else
+	
+		if Combo14.GetCurSel = 1 then
+			if Combo1.GetCurSel >= 0 and Combo1.GetCurSel <= 1 then
+				Num = 1000
+			else
+				if RadioGroup1.GetCheckIndex = 1 then
+					Num = 1
+				else
+					Num = 1000
+				end if
+			end if
+		else
+			Num = 1
+		end if
+			
+		amt = trim(GridPro4.GetCellString(1 , 0 , col-1 ))
+		' 무조건 기간누적
+		if (LEN(amt) = 0) then
+			amt = "0"
+		end if
+		
+		' 순매수증감
+		if (Combo5.GetCurSel() = 1) then
+			GridPro3.RealUpdateRowData  ilja , 0 , 0 , 0 , true									' 일자
+			GridPro3.RealUpdateRowData  ROUND(giganamt/Num), 0 , col , col , true							' 증감
+			chartamt = giganamt
+		elseif (Combo5.GetCurSel() = 0) then
+			GridPro3.RealUpdateRowData  ilja , 0 , 0 , 0 , true									' 일자
+			GridPro3.RealUpdateRowData  ROUND(giganamt/Num) + CLng(amt) , 0 , col , col , true		' 누적
+			chartamt = CLng(ROUND(giganamt/Num)) + CLng(amt)
+		else
+			GridPro3.RealUpdateRowData  ilja , 0 , 0 , 0 , true									' 일자
+			GridPro3.RealUpdateRowData  ROUND(giganamt/Num) , 0 , col , col , true		' 누적
+			chartamt = CLng(ROUND(giganamt/Num))
+		end if
+		
+		GridPro4.RealUpdateRowData  ROUND(giganamt/Num) + CLng(amt) , 0 , col-1 , col-1 , true		' 누적
+		set9000(tujajacode)
+		
+	end if
+	
+	
+	SetGraphData()	
+	
+	seriesname = ""
+	seriesname = getseriesname(col)
+			
+
+	if (seriesname = "") then
+		exit sub
+	end if
+			
+
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		SetGraphReal seriesname,time_C,chartamt,time_C,0
+		if (tujajacode = "9000") then
+			SetGraphReal "Series12",time_C,chartamt,time_C,0
+			If time_C >= 170000 Then
+				idxamt = GridPro1.GetCellString (0 , 0 , 1)
+				SetGraphReal "Series0",time_C, idxamt,time_C,0				
+			End If
+		end if
+	else
+		SetGraphReal seriesname,ilja,chartamt,ilja,0
+		if (tujajacode = "9000") then
+			SetGraphReal "Series12",ilja,chartamt,ilja,0
+		end if	
+	end if
+	
+End Sub
+
+
+Sub setOPTINV()
+	tujajacode = FEEDMANAGER.GetItemData ("OPTINV", "OutBlock", "투자자코드", 0)
+	sangpumcode = FEEDMANAGER.GetItemData ("OPTINV", "OutBlock", "상품코드", 0)
+	optiongubun = FEEDMANAGER.GetItemData ("OPTINV", "OutBlock", "옵션구분", 0)
+				
+	if RadioGroup1.GetCheckIndex() = 0 then
+		select case Combo5.GetCurSel()	
+				case 0		'순매수누적금액
+					strmoney = FEEDMANAGER.GetItemData ("OPTINV", "OutBlock", "순약정금액", 0)/1000000
+					giganamt = FEEDMANAGER.GetItemData ("OPTINV", "OutBlock", "순약정금액", 0)/1000000					
+				case 1		'순매수증감금액
+					strmoney = FEEDMANAGER.GetItemData ("OPTINV", "OutBlock", "순약정금액", 0)/1000000		
+					giganamt = FEEDMANAGER.GetItemData ("OPTINV", "OutBlock", "순약정금액", 0)/1000000		
+				case 2		'매도금액
+					strmoney = FEEDMANAGER.GetItemData ("OPTINV", "OutBlock", "매도약정금액", 0)/1000000	
+					giganamt = FEEDMANAGER.GetItemData ("OPTINV", "OutBlock", "매도약정금액", 0)/1000000	
+				case 3		'매수금액
+					strmoney = FEEDMANAGER.GetItemData ("OPTINV", "OutBlock", "매수약정금액",0)/1000000	
+					giganamt = FEEDMANAGER.GetItemData ("OPTINV", "OutBlock", "매수약정금액",0)/1000000	
+		end select
+	elseif RadioGroup1.GetCheckIndex() = 1 then
+		select case Combo5.GetCurSel()	
+				case 0		'순매수누적수량
+					strmoney = FEEDMANAGER.GetItemData ("OPTINV", "OutBlock", "순약정수량", 0)				
+					giganamt = FEEDMANAGER.GetItemData ("OPTINV", "OutBlock", "순약정수량", 0)				
+				case 1		'순매수증감수량
+					strmoney = FEEDMANAGER.GetItemData ("OPTINV", "OutBlock", "순약정수량", 0)				
+					giganamt = FEEDMANAGER.GetItemData ("OPTINV", "OutBlock", "순약정수량", 0)				
+				case 2		'매도수량
+					strmoney = FEEDMANAGER.GetItemData ("OPTINV", "OutBlock", "매도약정수량", 0)
+					giganamt = FEEDMANAGER.GetItemData ("OPTINV", "OutBlock", "매도약정수량", 0)
+				case 3		'매수수량
+					strmoney = FEEDMANAGER.GetItemData ("OPTINV", "OutBlock", "매수약정수량", 0)				
+					giganamt = FEEDMANAGER.GetItemData ("OPTINV", "OutBlock", "매수약정수량", 0)				
+		end select
+	end if
+	
+	col = gettujajaindex(tujajacode)
+
+	' 그리드에 insert또는 update한다			
+	ilja = FEEDMANAGER.GetItemData ("OPTINV", "OutBlock", "일자", 0)
+	time2 = FEEDMANAGER.GetItemData ("OPTINV", "OutBlock", "시간", 0)
+	time_C = FEEDMANAGER.GetItemData ("OPTINV", "OutBlock", "시간", 0)
+
+'	if (checktime(time2) = -1) then
+'		exit sub
+'	end if
+
+
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		c0 = time2
+		If c0 >= 240000 Then
+		  c0 = c0- 240000
+		End If
+	else
+		c0 = ilja
+	end if
+	
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		if (GridPro1.BodyRowCount < 1) then
+			GridPro1.InsertEmptyRow  0 , 1 , true , true
+			GridPro1.RealUpdateRowData  settimegapSS(c0,30) , 0 , 0 , 0 , true					' 시간
+			GridPro1.RealUpdateRowData  strmoney , 0 , col , col , true			' 투자자
+			GridPro2.RealUpdateRowData  strmoney , 0 , col-1 , col-1 , true		' 투자자
+			set9000(tujajacode)
+			exit sub
+		end if	
+	end if
+	
+	
+	time2 = setinsert(ilja,time2)
+	' 당일
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		
+		' 순매수증감
+		if (Combo5.GetCurSel() = 1) then
+			' 증감을 계산한다
+			jeunggam = trim(GridPro2.GetCellString(0 , 0 , col-1 ))
+			if (LEN(jeunggam) = 0) then
+				jeunggam = "0"
+			end if	
+			jeunggam = CLng(giganamt) - CLng(jeunggam)
+			
+			before = trim(GridPro1.GetCellString(0 , 0 , col ))
+			if (LEN(before) = 0) then
+				before = "0"
+			end if
+				
+			GridPro1.RealUpdateRowData  time2 , 0 , 0 , 0 , true					' 시간
+			GridPro1.RealUpdateRowData  CLng(before) + CLng(jeunggam)  , 0 , col , col , true			' 증감
+			chartamt = CLng(before) + CLng(jeunggam)
+		else	' 누적
+			GridPro1.RealUpdateRowData  time2 , 0 , 0 , 0 , true									' 시간
+			GridPro1.RealUpdateRowData  giganamt , 0 , col , col , true								' 누적
+			chartamt = giganamt
+		end if	
+		GridPro2.RealUpdateRowData  giganamt , 0 , col-1 , col-1 , true		' 투자자		
+		set9000(tujajacode)
+	else
+	
+		if Combo14.GetCurSel = 1 then
+			if Combo1.GetCurSel >= 0 and Combo1.GetCurSel <= 1 then
+				Num = 1000
+			else
+				if RadioGroup1.GetCheckIndex = 1 then
+					Num = 1
+				else
+					Num = 1000
+				end if
+			end if
+		else
+			Num = 1
+		end if
+			
+		amt = trim(GridPro4.GetCellString(1 , 0 , col-1 ))
+		' 무조건 기간누적
+		if (LEN(amt) = 0) then
+			amt = "0"
+		end if
+		
+		' 순매수증감
+		if (Combo5.GetCurSel() = 1) then
+			GridPro3.RealUpdateRowData  ilja , 0 , 0 , 0 , true									' 일자
+			GridPro3.RealUpdateRowData  ROUND(giganamt/Num), 0 , col , col , true							' 증감
+			chartamt = giganamt
+		elseif (Combo5.GetCurSel() = 0) then
+			GridPro3.RealUpdateRowData  ilja , 0 , 0 , 0 , true									' 일자
+			GridPro3.RealUpdateRowData  ROUND(giganamt/Num) + CLng(amt) , 0 , col , col , true		' 누적
+			chartamt = CLng(ROUND(giganamt/Num)) + CLng(amt)
+		else
+			GridPro3.RealUpdateRowData  ilja , 0 , 0 , 0 , true									' 일자
+			GridPro3.RealUpdateRowData  ROUND(giganamt/Num) , 0 , col , col , true		' 누적
+			chartamt = CLng(ROUND(giganamt/Num))
+		end if
+		
+		GridPro4.RealUpdateRowData  ROUND(giganamt/Num) + CLng(amt) , 0 , col-1 , col-1 , true		' 누적
+		set9000(tujajacode)
+	end if
+	
+	SetGraphData()	
+	
+	seriesname = ""
+	seriesname = getseriesname(col)
+
+	if (seriesname = "") then
+		exit sub
+	end if
+
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		SetGraphReal seriesname,time_C ,chartamt,time_C ,0
+		if (tujajacode = "9000") then
+			SetGraphReal "Series12",time_C ,chartamt,time_C ,0
+			If time_C >= 170000 Then
+				idxamt = GridPro1.GetCellString (0 , 0 , 1)
+				SetGraphReal "Series0",time_C, idxamt,time_C,0				
+			End If
+		end if		
+	else
+		SetGraphReal seriesname,ilja,chartamt,ilja,0
+		if (tujajacode = "9000") then
+			SetGraphReal "Series12",ilja,chartamt,ilja,0
+		end if		
+	end if
+
+	
+End Sub
+
+' 업종시세 real data처리
+Sub setSTCL1()
+	upjong = FEEDMANAGER.GetItemData ("STCL1", "OutBlock", "업종코드", 0)
+	jongga = FEEDMANAGER.GetItemData ("STCL1", "OutBlock", "현재지수", 0)
+	ilja = FEEDMANAGER.GetItemData ("STCL1", "OutBlock", "일자", 0)
+	time2 = FEEDMANAGER.GetItemData ("STCL1", "OutBlock", "시간", 0)
+	if (checktime(time2) = -1) then
+		exit sub
+	end if
+
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		c0 = time2
+	else
+		c0 = ilja
+	end if
+	
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		if (GridPro1.BodyRowCount < 1) then
+			GridPro1.InsertEmptyRow  0 , 1 , true , true
+			GridPro1.RealUpdateRowData  settimegapSS(c0,30) , 0 , 0 , 0 , true			' 시간
+			GridPro1.RealUpdateRowData  jongga , 0 , 1 , 1 , true		' 종가
+			exit sub
+		end if	
+	end if
+	
+	
+	'time2 = setinsert(ilja,time2)
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		'GridPro1.RealUpdateRowData  time2 , 0 , 0 , 0 , true					' 시간
+		GridPro1.RealUpdateRowData  jongga , 0 , 1 , 1 , true				' 종가
+	else
+		'GridPro3.RealUpdateRowData  ilja , 0 , 0 , 0 , true					' 일자
+		GridPro3.RealUpdateRowData  jongga , 0 , 1 , 1 , true				' 종가
+	end if
+
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		SetGraphReal "Series0",time2,jongga,time2,0
+	else
+		SetGraphReal "Series0",ilja,jongga,ilja,0
+	end if
+
+End Sub
+
+' 선물시세 real data처리
+Sub setFUTEXEC()
+	jongmokcode = FEEDMANAGER.GetItemData ("FUTEXEC", "OutBlock", "종목코드", 0)
+	jongga = FEEDMANAGER.GetItemData ("FUTEXEC", "OutBlock", "현재가", 0)
+	ilja = FEEDMANAGER.GetItemData ("FUTEXEC", "OutBlock", "일자", 0)
+	time2 = FEEDMANAGER.GetItemData ("FUTEXEC", "OutBlock", "시간", 0)
+	time_C = FEEDMANAGER.GetItemData ("FUTEXEC", "OutBlock", "시간", 0)
+'	if (checktime(time2) = -1) then
+'		exit sub
+'	end if
+
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		c0 = time2
+		If c0 >= 240000 Then
+		  c0 = c0- 240000
+		End If
+	else
+		c0 = ilja
+	end if
+	
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		if (GridPro1.BodyRowCount < 1) then
+			GridPro1.InsertEmptyRow  0 , 1 , true , true
+			GridPro1.RealUpdateRowData  settimegapSS(c0,30) , 0 , 0 , 0 , true			' 시간
+			GridPro1.RealUpdateRowData  jongga , 0 , 1 , 1 , true		' 종가
+			exit sub
+		end if	
+	end if
+	
+	'time2 = setinsert(ilja,time2)
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		'GridPro1.RealUpdateRowData  time2 , 0 , 0 , 0 , true					' 시간
+		GridPro1.RealUpdateRowData  jongga , 0 , 1 , 1 , true				' 종가
+	else
+		'GridPro3.RealUpdateRowData  ilja , 0 , 0 , 0 , true					' 일자
+		GridPro3.RealUpdateRowData  jongga , 0 , 1 , 1 , true				' 종가
+	end if
+
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		SetGraphReal "Series0",time_C,jongga,time_C,0
+	else
+		SetGraphReal "Series0",ilja,jongga,ilja,0
+	end if
+
+
+End Sub
+
+
+' 옵션시세 real data처리
+Sub setOPTEXEC()
+	jongmokcode = FEEDMANAGER.GetItemData ("OPTEXEC", "OutBlock", "종목코드", 0)
+	if Combo6.GetCurSel() < 10 then
+		jongga = FEEDMANAGER.GetItemData ("OPTEXEC", "OutBlock", "현재가", 0)
+	else
+		jongga = FEEDMANAGER.GetItemData ("OPTEXEC", "OutBlock", "기초자산현재가", 0)
+	end if
+	ilja = FEEDMANAGER.GetItemData ("OPTEXEC", "OutBlock", "일자", 0)
+	time2 = FEEDMANAGER.GetItemData ("OPTEXEC", "OutBlock", "시간", 0)
+	time_C = FEEDMANAGER.GetItemData ("OPTEXEC", "OutBlock", "시간", 0)	
+'	if (checktime(time2) = -1) then
+'		exit sub
+'	end if
+
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		c0 = time2
+		If c0 >= 240000 Then
+		  c0 = c0- 240000
+		End If
+	else
+		c0 = ilja
+	end if
+	
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		if (GridPro1.BodyRowCount < 1) then
+			GridPro1.InsertEmptyRow  0 , 1 , true , true
+			GridPro1.RealUpdateRowData  settimegapSS(c0,30) , 0 , 0 , 0 , true			' 시간
+			GridPro1.RealUpdateRowData  jongga , 0 , 1 , 1 , true		' 종가
+			exit sub
+		end if	
+	end if
+	
+	'time2 = setinsert(ilja,time2)
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		'GridPro1.RealUpdateRowData  time2 , 0 , 0 , 0 , true					' 시간
+		GridPro1.RealUpdateRowData  jongga , 0 , 1 , 1 , true				' 종가
+	else
+		'GridPro3.RealUpdateRowData  ilja , 0 , 0 , 0 , true					' 일자
+		GridPro3.RealUpdateRowData  jongga , 0 , 1 , 1 , true				' 종가
+	end if
+
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		SetGraphReal "Series0",time_C,jongga,time_C,0
+	else
+		SetGraphReal "Series0",ilja,jongga,ilja,0
+	end if
+
+
+End Sub
+
+
+'============================================================================
+Sub SetGraphData()
+	TeeChart3.ClearData "Series0"
+	
+	For col = 1 to 12
+		if (Combo6.GetCurSel( ) <= 9) then
+			Data = Trim(GridPro2.GetCellString(row, 0, col))
+		else
+			Data = Trim(GridPro4.GetCellString(row, 0, col))
+		end if	
+		
+		if Len(data) = 0 then
+			data = 0 
+		end if
+
+		if (Data > 0) then
+			TeeChart3.AddXY "Series0" , col , Data, getlabelname(g_label(col - 1)), rgb(255,0,0)
+		elseif (Data < 0) then
+			TeeChart3.AddXY "Series0" , col , Data, getlabelname(g_label(col - 1)), rgb(0,0,255)
+		elseif (Data = 0)	 then
+			TeeChart3.AddXY "Series0" , col , Data, getlabelname(g_label(col - 1)), rgb(255,255,255)
+		end if	
+	Next
+	
+	
+End Sub
+
+Sub requestcancel()
+	FEEDMANAGER.DataRequestCancel  "STCL1"
+	FEEDMANAGER.DataRequestCancel  "STIV1"
+
+	FEEDMANAGER.DataRequestCancel  "FUTEXEC"
+	FEEDMANAGER.DataRequestCancel  "FUTINV"
+	FEEDMANAGER.DataRequestCancel  "FTIV3"
+	FEEDMANAGER.DataRequestCancel  "FTIV4"
+
+
+	FEEDMANAGER.DataRequestCancel  "OPTEXEC"
+	FEEDMANAGER.DataRequestCancel  "OPTINV"
+	
+End Sub
+
+Sub requestreal()
+	if g_ReceiveCompleteFlag = 0 then
+		exit sub
+	end if	
+	requestcancel()
+
+	if (Calendar2.Caption <> Form.GetHostDate) then
+		exit sub
+	end if
+	
+	' 주,월은 리얼 하지않음
+	if (Combo6.GetCurSel( ) >= 11) then
+		exit sub
+	end if
+		
+	sijanggubun = g_jisu
+	upjonggubun = g_code
+	groupgubun = g_group
+	sangpumgubun = g_sangpum
+	optiongubun = g_option
+
+	select case sijanggubun		
+			case "1" , "7", "F", "N"		'거래소,코스닥,ETF ETN
+				FEEDMANAGER.SetItemData  "STCL1" , "InBlock" , "sKey" , 0 , upjonggubun
+				FEEDMANAGER.DataRequest  "STCL1"
+				
+				FEEDMANAGER.SetItemData  "STIV1" , "InBlock" , "sKey" , 0 , "****" & upjonggubun
+				FEEDMANAGER.DataRequest  "STIV1"
+
+			case "2","3","4","5","9","14" 			'선물
+					select case groupgubun
+						case "F"	' 코스피200선물
+							if (sangpumgubun = "01") then
+								jongmokcode = getseonmuljongmokcode3698("코스피200")
+							elseif (sangpumgubun = "01N") then
+								jongmokcode = getseonmuljongmokcode3698("코스피200_야간")								
+							elseif (sangpumgubun = "01T") then
+								jongmokcode = getseonmuljongmokcode3698("코스피200_24h")								
+							elseif (sangpumgubun = "04") then
+								jongmokcode = getseonmuljongmokcode3698("CME-K200")
+							elseif (sangpumgubun = "05") then
+								jongmokcode = getseonmuljongmokcode3698("미니코스피200")
+							elseif (sangpumgubun = "05N") then
+								jongmokcode = getseonmuljongmokcode3698("미니코스피200_야간")
+							elseif (sangpumgubun = "05T") then
+								jongmokcode = getseonmuljongmokcode3698("미니코스피200_24h")																
+							elseif (sangpumgubun = "06") then
+								jongmokcode = getseonmuljongmokcode3698("코스닥150")
+							elseif (sangpumgubun = "08") then
+								jongmokcode = getseonmuljongmokcode3698("KRX300")								
+							elseif (sangpumgubun = "09") then
+								jongmokcode = getseonmuljongmokcode3698("변동성지수")
+							elseif (sangpumgubun = "A0") then
+								jongmokcode = getseonmuljongmokcode3698("에너지화학")
+							elseif (sangpumgubun = "A1") then
+								jongmokcode = getseonmuljongmokcode3698("정보기술")
+							elseif (sangpumgubun = "A2") then
+								jongmokcode = getseonmuljongmokcode3698("금융지수")
+							elseif (sangpumgubun = "A3") then
+								jongmokcode = getseonmuljongmokcode3698("경기소비재")	
+							elseif (sangpumgubun = "A4") then		
+								jongmokcode = getseonmuljongmokcode3698("고배당50")
+							elseif (sangpumgubun = "A5") then		
+								jongmokcode = getseonmuljongmokcode3698("배당성장50")	
+
+							elseif (sangpumgubun = "A6") then		
+								jongmokcode = getseonmuljongmokcode3698("건설")									
+							elseif (sangpumgubun = "A7") then		
+								jongmokcode = getseonmuljongmokcode3698("중공업")	
+							elseif (sangpumgubun = "A8") then		
+								jongmokcode = getseonmuljongmokcode3698("헬스케어")																	
+							elseif (sangpumgubun = "A9") then		
+								jongmokcode = getseonmuljongmokcode3698("철강소재")	
+							elseif (sangpumgubun = "AA") then		
+								jongmokcode = getseonmuljongmokcode3698("생활소비재")	
+							elseif (sangpumgubun = "AB") then		
+								jongmokcode = getseonmuljongmokcode3698("산업재")																									
+
+							elseif (sangpumgubun = "AC") then		
+								jongmokcode = getseonmuljongmokcode3698("BBIG")																									
+							elseif (sangpumgubun = "AD") then		
+								jongmokcode = getseonmuljongmokcode3698("2차전지")																									
+							elseif (sangpumgubun = "AE") then		
+								jongmokcode = getseonmuljongmokcode3698("바이오")																									
+							elseif (sangpumgubun = "AG") then		
+								jongmokcode = getseonmuljongmokcode3698("코스닥글로벌")
+							elseif (sangpumgubun = "AH") then		
+								jongmokcode = getseonmuljongmokcode3698("코리아밸류업")
+								
+							end if				
+									
+						case "C"	' KTB선물,미국달러선물,상품선물
+							if (sangpumgubun = "61" ) then
+								jongmokcode = getseonmuljongmokcode3698("(구)KTB")
+							elseif (sangpumgubun = "65") then
+								jongmokcode = getseonmuljongmokcode3698("KTB_03")
+							elseif (sangpumgubun = "65N") then
+								jongmokcode = getseonmuljongmokcode3698("KTB_03_야간")
+							elseif (sangpumgubun = "65T") then
+								jongmokcode = getseonmuljongmokcode3698("KTB_03_24h")
+							elseif (sangpumgubun = "66") then
+								jongmokcode = getseonmuljongmokcode3698("KTB_05")
+							elseif (sangpumgubun = "67") then
+								jongmokcode = getseonmuljongmokcode3698("KTB_10")
+							elseif (sangpumgubun = "67N") then
+								jongmokcode = getseonmuljongmokcode3698("KTB_10_야간")								
+							elseif (sangpumgubun = "67T") then
+								jongmokcode = getseonmuljongmokcode3698("KTB_10_24h")								
+							elseif (sangpumgubun = "69") then
+								jongmokcode = getseonmuljongmokcode3698("KOFR 3M")
+'							elseif (sangpumgubun = "62") then
+'								jongmokcode = getseonmuljongmokcode3698("MSB")
+							elseif (sangpumgubun = "70") then
+								jongmokcode = getseonmuljongmokcode3698("KTB_30")
+							elseif (sangpumgubun = "75") then
+								jongmokcode = getseonmuljongmokcode3698("USD")
+							elseif (sangpumgubun = "75N") then
+								jongmokcode = getseonmuljongmokcode3698("USD_야간")
+							elseif (sangpumgubun = "75T") then
+								jongmokcode = getseonmuljongmokcode3698("USD_24h")																
+							elseif (sangpumgubun = "76") then
+								jongmokcode = getseonmuljongmokcode3698("JPY")
+							elseif (sangpumgubun = "77") then
+								jongmokcode = getseonmuljongmokcode3698("EUR")
+							elseif (sangpumgubun = "88") then
+								jongmokcode = getseonmuljongmokcode3698("골드")
+							end if
+						case "G"	' 해외선물
+							if (sangpumgubun = "07" ) then
+								jongmokcode = getseonmuljongmokcode3698("유로스톡스50")
+							end if
+					end select
+					if groupgubun <> "L" then
+						TeeChart2.ShowGraph "Series0", True		
+						if (LEFT(sangpumgubun,2) = "65") or (LEFT(sangpumgubun,2)= "67") or (LEFT(sangpumgubun,2)= "70")  then
+							sCode = "C" & mid(jongmokcode, 2, 2) & "00000"			
+							FEEDMANAGER.SetItemData  "FUTEXEC" , "InBlock" , "종목코드" , 0 , sCode 
+						else 
+							FEEDMANAGER.SetItemData  "FUTEXEC" , "InBlock" , "종목코드" , 0 , jongmokcode
+						end if 
+						FEEDMANAGER.DataRequest  "FUTEXEC"
+					else
+						TeeChart2.ShowGraph "Series0", False
+					end if
+					CmmdCd = Trim(Combo9.GetCellString ( Combo9.GetCurSel() , 0))
+					' @@@@ USD 야간 관련 
+					FEEDMANAGER.SetBCCode "FUTINV", "FTIV1"
+
+					if CmmdCd = "75" then
+						CmmdNm = Trim(Combo9.GetCellString ( Combo9.GetCurSel() , 1))
+						if Len(CmmdNm) >= 4 then
+							if Mid(CmmdNm, Len(CmmdNm) - 3, 4) = "FLEX" then
+								FEEDMANAGER.SetBCCode "FUTINV", "FTIV2"
+							end if
+						end if
+					end if
+					sRealCode = ""
+					if Right(sangpumgubun ,1) = "N" Then
+						sRealCode = "FTIV3"
+						FEEDMANAGER.SetBCCode "FTIV3", "FTIV3"
+					ElseIf Right(sangpumgubun ,1) = "T" Then
+						sRealCode = "FTIV4"
+						FEEDMANAGER.SetBCCode "FTIV4", "FTIV4"
+					Else
+						sRealCode = "FUTINV"
+						FEEDMANAGER.SetBCCode "FUTINV", "FTIV1"
+					End If
+					trace sRealCode&","&LEFT(sangpumgubun,2) & "****"
+					FEEDMANAGER.SetItemData sRealCode , "InBlock", "KEY", 0, LEFT(sangpumgubun,2) & "****"
+					FEEDMANAGER.DataRequest sRealCode 
+					g_linkcode = jongmokcode		
+			case "6","8" 			'옵션
+					select case groupgubun
+						case "4"	' 코스피200지수옵션
+							if sangpumgubun= "01" then
+								if (optiongubun = "2") then
+									jongmokcode = getoptionjongmokcode3797("콜")
+								else
+									jongmokcode = getoptionjongmokcode3797("풋")
+								end if
+							else 
+								if (optiongubun = "2") then
+									jongmokcode = getoptionjongmokcode3797_2("콜")
+								else
+									jongmokcode = getoptionjongmokcode3797_2("풋")
+								end if							
+							end if
+							
+						case "6"	' 통화지수옵션
+							if (optiongubun = "2") then
+								jongmokcode = getoptionjongmokcode3797_1("콜")
+							else
+								jongmokcode = getoptionjongmokcode3797_1("풋")
+							end if
+					end select
+					trace jongmokcode&", "&sangpumgubun & optiongubun & "****"
+					
+					FEEDMANAGER.SetItemData  "OPTEXEC" , "InBlock" , "종목코드" , 0 , jongmokcode
+					FEEDMANAGER.DataRequest  "OPTEXEC"
+
+					FEEDMANAGER.SetItemData "OPTINV", "InBlock", "KEY", 0, sangpumgubun & optiongubun & "****"
+					FEEDMANAGER.DataRequest "OPTINV"
+					g_linkcode = jongmokcode		
+		end select
+End Sub
+
+
+'============================================================================
+Function getseonmuljongmokcode3698(name)
+	getseonmuljongmokcode3698 = ""
+
+	For i = 0 to 2999
+		ItemNm = TRANMANAGER.GetItemData("3698", "OutBlock1", "기초자산명", i)
+		if Len(Trim(ItemNm)) = 0 then
+			Exit Function
+		End if
+
+		if ItemNm = name then
+			getseonmuljongmokcode3698 = TRANMANAGER.GetItemData("3698", "OutBlock1", "선물종목코드", i)
+			Exit For
+		end if
+	Next		
+End Function
+
+' 지수옵션 종목코드 읽기
+'============================================================================
+Function getoptionjongmokcode3797(name)
+	getoptionjongmokcode3797 = ""
+	ATM = trim(TRANMANAGER.GetItemData("3797", "OutBlock", "ATM행사가격", 0))
+	YYMM = LEFT(trim(TRANMANAGER.GetItemData("3797", "OutBlock1", "년월", 0)),4)
+	For i = 0 to g_3797MaxCnt
+		jongmokcode  = TRANMANAGER.GetItemData("3797", "OutBlock3", "종목코드", i)
+		haengsaga 	 = trim(TRANMANAGER.GetItemData("3797", "OutBlock3", "행사가격", i))
+		ym 	 = trim(TRANMANAGER.GetItemData("3797", "OutBlock3", "년월", i))
+		
+		
+		if Len(Trim(jongmokcode)) = 0 then
+			Exit Function
+		End if
+		if CDbl(ATM) = CDbl(haengsaga) AND (CLng(YYMM ) = CLng(ym)) then
+			Exit For
+		end if
+	Next		
+
+	if (name = "콜") then
+		if CLng(YYMM ) >= 2601 then
+			getoptionjongmokcode3797 =  "B" & Mid(jongmokcode,2,7)		
+		else
+			getoptionjongmokcode3797 =  "2" & Mid(jongmokcode,2,7)
+		end if
+	else
+		if CLng(YYMM ) >= 2601 then
+			getoptionjongmokcode3797 =  "C" & Mid(jongmokcode,2,7)
+		else
+			getoptionjongmokcode3797 =  "3" & Mid(jongmokcode,2,7)		
+		end if
+	end if	
+End Function
+
+' 통화옵션 종목코드 읽기
+'============================================================================
+Function getoptionjongmokcode3797_1(name)
+	getoptionjongmokcode3797_1 = ""
+	ATM = trim(TRANMANAGER.GetItemData("3797_1", "OutBlock", "ATM행사가격", 0))
+	YYMM = LEFT(trim(TRANMANAGER.GetItemData("3797_1", "OutBlock1", "년월", 0)),4)
+
+	For i = 0 to g_3797MaxCnt
+		jongmokcode  = TRANMANAGER.GetItemData("3797_1", "OutBlock3", "종목코드", i)
+		haengsaga 	 = trim(TRANMANAGER.GetItemData("3797_1", "OutBlock3", "행사가격", i))
+		ym 	 = LEFT(trim(TRANMANAGER.GetItemData("3797_1", "OutBlock3", "년월", i)),4)
+		
+		
+		if Len(Trim(jongmokcode)) = 0 then
+			Exit Function
+		End if
+		if CDbl(ATM) = CDbl(haengsaga) AND (CLng(YYMM ) = CLng(ym)) then
+			Exit For
+		end if
+	Next		
+
+	if (name = "콜") then
+		if CLng(YYMM ) >= 2601 then	
+			getoptionjongmokcode3797_1 =  "B" & Mid(jongmokcode,2,7)
+		else
+			getoptionjongmokcode3797_1 =  "2" & Mid(jongmokcode,2,7)		
+		end if
+	else
+		if CLng(YYMM ) >= 2601 then		
+			getoptionjongmokcode3797_1 =  "C" & Mid(jongmokcode,2,7)
+		else
+			getoptionjongmokcode3797_1 =  "3" & Mid(jongmokcode,2,7)		
+		end if
+	end if	
+		
+End Function
+
+' MINI-K200 지수옵션 종목코드 읽기
+'============================================================================
+Function getoptionjongmokcode3797_2(name)
+	getoptionjongmokcode3797_2 = ""
+	ATM = trim(TRANMANAGER.GetItemData("3797_2", "OutBlock", "ATM행사가격", 0))
+	YYMM = LEFT(trim(TRANMANAGER.GetItemData("3797_2", "OutBlock1", "년월", 0)),4)
+	For i = 0 to g_3797MaxCnt
+		jongmokcode  = TRANMANAGER.GetItemData("3797_2", "OutBlock3", "종목코드", i)
+		haengsaga 	 = trim(TRANMANAGER.GetItemData("3797_2", "OutBlock3", "행사가격", i))
+		ym 	 = LEFT(trim(TRANMANAGER.GetItemData("3797_2", "OutBlock3", "년월", i)),4)
+		
+		if Len(Trim(jongmokcode)) = 0 then
+			Exit Function
+		End if
+		if Mid(jongmokcode,2,2) = "09" or Mid(jongmokcode,2,2) = "AF" or Mid(jongmokcode,2,2) = "19" or Mid(jongmokcode,2,2) = "1F"   then 
+			if CDbl(ATM) = CDbl(haengsaga) AND (YYMM = ym) then
+				Exit For
+			end if
+		else 
+			if CDbl(ATM) = CDbl(haengsaga) AND (CLng(YYMM ) = CLng(ym)) then
+				Exit For
+			end if
+
+		end if
+
+
+	Next		
+
+	if (name = "콜") then
+		if CLng(YYMM ) >= 2601 then			
+			getoptionjongmokcode3797_2 =  "B" & Mid(jongmokcode,2,7)
+		else
+			getoptionjongmokcode3797_2 =  "2" & Mid(jongmokcode,2,7)		
+		end if
+	else
+		if CLng(YYMM ) >= 2601 then				
+			getoptionjongmokcode3797_2 =  "C" & Mid(jongmokcode,2,7)
+		else
+			getoptionjongmokcode3797_2 =  "3" & Mid(jongmokcode,2,7)		
+		end if
+	end if	
+End Function
+
+
+'================================================================================
+'		여기는 공통로직 시작
+'================================================================================
+
+Function gettimeSS(timegrid,gap)
+	on error resume next
+
+	' 시간을 분해한다	
+	if (len(timegrid) = 5) then
+		hh = CLng(mid(timegrid,1,1))
+		mm = CLng(mid(timegrid,2,2))
+		ss = CLng(mid(timegrid,4,2))
+	elseif (len(timegrid) = 6) then
+		hh = CLng(mid(timegrid,1,2))
+		mm = CLng(mid(timegrid,3,2))
+		ss = CLng(mid(timegrid,5,2))
+	elseif (len(timegrid) = 4) then
+		hh = 0
+		mm = CLng(mid(timegrid,1,2))
+		ss = CLng(mid(timegrid,3,2))
+	end if	
+	
+	ss = ss + gap
+	
+	' 1분을 증가시키고 초는zero로 세팅
+	if (ss >= 60) then
+		mm = mm + 1		
+		ss = ss - 60
+	end if
+	
+	' 1시간을 증가시키고 분은 zero로 세팅
+	if (mm >= 60) then
+		hh = hh + 1
+		mm = mm - 60
+	end if
+	
+	gettimeSS = CStr2(hh) & CStr2(mm) & CStr2(ss)
+End Function
+
+Function gettimeMM(timegrid,gap)
+	on error resume next
+
+	' 시간을 분해한다	
+	if (len(timegrid) = 5) then
+		hh = CLng(mid(timegrid,1,1))
+		mm = CLng(mid(timegrid,2,2))
+		ss = CLng(mid(timegrid,4,2))
+	elseif (len(timegrid) = 6) then
+		hh = CLng(mid(timegrid,1,2))
+		mm = CLng(mid(timegrid,3,2))
+		ss = CLng(mid(timegrid,5,2))
+	elseif (len(timegrid) = 4) then
+		hh = 0
+		mm = CLng(mid(timegrid,1,2))
+		ss = CLng(mid(timegrid,3,2))
+	elseif (len(timegrid) = 2) then		
+		hh = 0	
+		mm = 0
+		ss = CLng(mid(timegrid,3,2))	
+	end if	
+	
+	mm = mm + gap
+		
+	' 1시간을 증가시키고 분은 zero로 세팅
+	if (mm >= 60) then
+		hh = hh + 1
+		mm = mm - 60
+	end if
+	
+	gettimeMM = CStr2(hh) & CStr2(mm) & CStr2(ss)
+End Function
+
+Function gettimeHH(timegrid,gap)
+	on error resume next
+
+	' 시간을 분해한다	
+	if (len(timegrid) = 5) then
+		hh = CLng(mid(timegrid,1,1))
+		mm = CLng(mid(timegrid,2,2))
+		ss = CLng(mid(timegrid,4,2))
+	elseif (len(timegrid) = 6) then
+		hh = CLng(mid(timegrid,1,2))
+		mm = CLng(mid(timegrid,3,2))
+		ss = CLng(mid(timegrid,5,2))
+	elseif (len(timegrid) = 4) then
+		hh = 0
+		mm = CLng(mid(timegrid,1,2))
+		ss = CLng(mid(timegrid,3,2))
+	elseif (len(timegrid) = 2) then		
+		hh = 0	
+		mm = 0
+		ss = CLng(mid(timegrid,3,2))	
+	end if	
+	
+	hh = hh + gap
+	gettimeHH = CStr2(hh) & CStr2(mm) & CStr2(ss)
+End Function
+
+Function CStr2(str)
+	if (len(str) = 1) then
+		CStr2 = "0" & str
+	else
+		CStr2 = str
+	end if
+End Function
+
+'================================================================================
+'		여기는 공통로직 끝
+'================================================================================
+Function setinsert(ilja2,time2)
+	iljagrid = trim(GridPro3.GetCellString( 0 , 0 , 0 ))
+	timegrid = trim(GridPro1.GetCellString( 0 , 0 , 0 ))
+	if timegrid <> "" Then
+		timegrid = CDbl(timegrid)
+		If timegrid <= 60000 Then
+		  timegrid  = timegrid + 240000
+		End If
+	End If
+
+	' 그리드TOP에 있는 시간 >= 리얼로 받은시간
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		if (trim(timegrid) = "") OR (trim(time2) = "") then
+			setinsert = adjust_Time(time2)
+			exit function
+		end if
+	
+		if (CLng(timegrid) >= CLng(time2)) then
+			setinsert = adjust_Time(timegrid)
+			exit function
+		end if
+	end if
+
+	' 장중데이타
+	if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+		if (CLng(time2) >= CLng(timegrid)) then
+			set grid = GridPro1
+			timegrid2 = setinsert2(time2,timegrid,0,grid)
+			setinsert = timegrid2
+			set grid = Nothing
+		else	
+			setinsert = adjust_Time(timegrid)
+		end if
+	else	' 일별데이타
+		if (iljagrid = "") then
+			iljagrid = "0"
+		end if	
+		sPrevDate = replace(DateAdd("d",-1,Date()),"-","")
+		iNowTime = CDbl(replace(Form.GetLocalSystemTime,":",""))
+		if iNowTime < 60000 Then
+			ilja2 = sPrevDate
+		End If
+		
+		if (CLng(ilja2) <> CLng(iljagrid)) then
+			GridPro3.InsertEmptyRow  0 , 1 , true , true
+			GridPro3.SetCellString  0 , 0 , 0 , ilja2
+		end if
+		setinsert = 0
+	
+	end if
+	
+End Function
+
+' 허수데이타를 생성한다(IF문은 화면마다 다르게 적용한다)
+Function setinsert2(time2,timegrid,col,grid)
+	'초단위 버리기위해
+	while (CLng(time2)/10 > CLng(timegrid)/10)
+		if (Combo6.GetCurSel( ) >= 0) AND (Combo6.GetCurSel( ) <= 9) then
+			select case Combo6.GetCurSel( )
+				case 0
+					timegrid = gettimeSS(CLng(timegrid),30) 	' 30초
+				case 1
+					timegrid = gettimeMM(CLng(timegrid),1) 	' 1분
+				case 2
+					timegrid = gettimeMM(CLng(timegrid),2) 	' 2분
+				case 3
+					timegrid = gettimeMM(CLng(timegrid),3) 	' 3분
+				case 4
+					timegrid = gettimeMM(CLng(timegrid),5) 	' 5분
+				case 5
+					timegrid = gettimeMM(CLng(timegrid),10) 	' 10분
+				case 6
+					timegrid = gettimeMM(CLng(timegrid),15) 	' 15분					
+				case 7
+					timegrid = gettimeMM(CLng(timegrid),20) 	' 20분					
+				case 8
+					timegrid = gettimeMM(CLng(timegrid),30) 	' 30분					
+				case 9
+					timegrid = gettimeHH(CLng(timegrid),1) 	' 60분
+					
+			end select
+		End If
+		' 순매수증감
+		if (Combo5.GetCurSel( ) = 1) then
+			grid.InsertEmptyRow  0 , 1 , true , true
+			grid.SetCellString 0 , 0 , 1 , grid.GetCellString (1 , 0 , 1)
+			for i = 2 to 14
+				grid.SetCellString 0 , 0 , i , 0
+			next	
+		else
+			grid.InsertCopyTopRow( )
+		end if	
+
+		time_adjust = adjust_Time(timegrid)
+		grid.SetCellString  0 , 0 , col , time_adjust
+		
+	Wend
+	setinsert2 = time_adjust
+End Function
+
+Function adjust_Time(val)
+	time_adjust = val
+	If time_adjust >= 240000 Then
+	  time_adjust = time_adjust - 240000
+	End If
+    adjust_Time = Right(String(6, "0") & time_adjust, 6)
+End Function
+
+Function getlabelname(name)
+	length = len(name)
+	getlabelname = ""
+	for i = 1 to length
+		getlabelname = getlabelname & mid(name,i,1) & chr(13)
+	next
+End Function
+
+'============================================================================
+Sub SetGraphReal(seriesname,x,y,label,color)
+
+	TeeChart2.AddRealXY seriesname , x , y , Label , color
+End Sub
+
+Function getseriesname(col)
+	seriesname = ""
+	select case col
+		case 2	' 외국인	
+			seriesname = "Series1"
+		case 3	' 개인	
+			seriesname = "Series2"
+		case 4	' 기관계
+			seriesname = "Series3"
+		case 5	' 증권	
+			seriesname = "Series4"
+		case 6	' 보험	
+			seriesname = "Series5"
+		case 7	' 투신	
+			seriesname = "Series6"
+		case 8	' 사모펀드
+			seriesname = "Series7"
+		case 9	' 은행	
+			seriesname = "Series8"
+		case 10	' 종금
+			seriesname = "Series9"
+		case 11	' 기금
+			seriesname = "Series10"
+		case 12	' 선물	
+			seriesname = "Series11"
+		case 13	' 기타법인
+			seriesname = "Series12"
+		case 14	' 외국인	
+			seriesname = "Series13"
+		case 15	' 기타외국인	
+			seriesname = "Series14"
+	end select
+	getseriesname = seriesname
+End Function
+'============================================================================
+'============================================================================
+Sub Table2_OnDblClick(lRow , lColumn)
+	Table3_OnDblClick lRow , lColumn
+End Sub
+
+Sub set5445()
+	name = "지수구분"
+	TRANMANAGER.SetItemData  "5445" , "InBlock" , name , 0 , TRANMANAGER.GetItemData( "3302" , "InBlock" , name , 0 )
+	name = "업종코드"
+	TRANMANAGER.SetItemData  "5445" , "InBlock" , name , 0 , TRANMANAGER.GetItemData( "3302" , "InBlock" , name , 0 )
+	name = "그룹코드"
+	TRANMANAGER.SetItemData  "5445" , "InBlock" , name , 0 , TRANMANAGER.GetItemData( "3302" , "InBlock" , name , 0 )
+	name = "상품코드"
+	TRANMANAGER.SetItemData  "5445" , "InBlock" , name , 0 , TRANMANAGER.GetItemData( "3302" , "InBlock" , name , 0 )
+	name = "옵션구분"
+	TRANMANAGER.SetItemData  "5445" , "InBlock" , name , 0 , TRANMANAGER.GetItemData( "3302" , "InBlock" , name , 0 )
+	name = "항목타입"
+	TRANMANAGER.SetItemData  "5445" , "InBlock" , name , 0 , TRANMANAGER.GetItemData( "3302" , "InBlock" , name , 0 )
+	name = "데이터타입"
+	TRANMANAGER.SetItemData  "5445" , "InBlock" , name , 0 , TRANMANAGER.GetItemData( "3302" , "InBlock" , name , 0 )
+	name = "시간갭"
+	TRANMANAGER.SetItemData  "5445" , "InBlock" , name , 0 , TRANMANAGER.GetItemData( "3302" , "InBlock" , name , 0 )
+	name = "화면타입"
+	TRANMANAGER.SetItemData  "5445" , "InBlock" , name , 0 , TRANMANAGER.GetItemData( "3302" , "InBlock" , name , 0 )
+	name = "연속시간"
+	TRANMANAGER.SetItemData  "5445" , "InBlock" , name , 0 , TRANMANAGER.GetItemData( "3302" , "InBlock" , name , 0 )
+	name = "요청조회건수"
+	TRANMANAGER.SetItemData  "5445" , "InBlock" , name , 0 , "3000"
+End Sub
+
+Sub set5446()
+	name = "지수구분"
+	TRANMANAGER.SetItemData  "5446" , "InBlock" , name , 0 , TRANMANAGER.GetItemData( "3303" , "InBlock" , name , 0 )
+	name = "업종코드"
+	TRANMANAGER.SetItemData  "5446" , "InBlock" , name , 0 , TRANMANAGER.GetItemData( "3303" , "InBlock" , name , 0 )
+	name = "그룹코드"
+	TRANMANAGER.SetItemData  "5446" , "InBlock" , name , 0 , TRANMANAGER.GetItemData( "3303" , "InBlock" , name , 0 )
+	name = "상품코드"
+	TRANMANAGER.SetItemData  "5446" , "InBlock" , name , 0 , TRANMANAGER.GetItemData( "3303" , "InBlock" , name , 0 )
+	name = "옵션구분"
+	TRANMANAGER.SetItemData  "5446" , "InBlock" , name , 0 , TRANMANAGER.GetItemData( "3303" , "InBlock" , name , 0 )
+	name = "항목타입"
+	TRANMANAGER.SetItemData  "5446" , "InBlock" , name , 0 , TRANMANAGER.GetItemData( "3303" , "InBlock" , name , 0 )
+	name = "데이터타입"
+	TRANMANAGER.SetItemData  "5446" , "InBlock" , name , 0 , TRANMANAGER.GetItemData( "3303" , "InBlock" , name , 0 )
+	name = "시간갭"
+	TRANMANAGER.SetItemData  "5446" , "InBlock" , name , 0 , TRANMANAGER.GetItemData( "3303" , "InBlock" , name , 0 )
+	name = "누적타입"
+	TRANMANAGER.SetItemData  "5446" , "InBlock" , name , 0 , TRANMANAGER.GetItemData( "3303" , "InBlock" , name , 0 )
+	name = "시작일자"
+	TRANMANAGER.SetItemData  "5446" , "InBlock" , name , 0 , TRANMANAGER.GetItemData( "3303" , "InBlock" , name , 0 )
+	name = "종료일자"
+	TRANMANAGER.SetItemData  "5446" , "InBlock" , name , 0 , TRANMANAGER.GetItemData( "3303" , "InBlock" , name , 0 )
+	name = "연속일자"
+	TRANMANAGER.SetItemData  "5446" , "InBlock" , name , 0 , TRANMANAGER.GetItemData( "3303" , "InBlock" , name , 0 )
+	name = "요청조회건수"
+	TRANMANAGER.SetItemData  "5446" , "InBlock" , name , 0 , "3000"
+End Sub
+
+Function checktime(time2)
+	if(	g_sangpum = "04" )then
+		if (CLng(time2) > 290000) then
+			checktime = -1
+		else
+			checktime = 1
+		end if	
+	else
+		if (CLng(time2) < 070000) OR (CLng(time2) > 235959) then
+			checktime = -1
+		else
+			checktime = 1
+		end if		
+	end if
+End Function
+
+Function settimegapSS(timegrid,gap)
+
+	' 시간이 아니구 일자이면 일자를 리턴한다
+	if (LEN(timegrid) = 8) AND (mid(timegrid,1,2) = "20") then
+		settimegapSS = timegrid
+		exit function
+	end if
+	
+	' 시간을 분해한다	
+	if (len(timegrid) = 6) then
+		hh = CLng(mid(timegrid,1,2))
+		mm = CLng(mid(timegrid,3,2))
+		ss = CLng(mid(timegrid,5,2))	
+	elseif (len(timegrid) = 5) then
+		hh = CLng(mid(timegrid,1,1))
+		mm = CLng(mid(timegrid,2,2))
+		ss = CLng(mid(timegrid,4,2))
+	elseif (len(timegrid) = 4) then
+		hh = 0
+		mm = CLng(mid(timegrid,1,2))
+		ss = CLng(mid(timegrid,3,2))
+	elseif (len(timegrid) = 3) then		
+		hh = 0	
+		mm = CLng(mid(timegrid,1,1))
+		ss = CLng(mid(timegrid,2,2))			
+	elseif (len(timegrid) = 2) then		
+		hh = 0	
+		mm = 0
+		ss = CLng(mid(timegrid,1,2))	
+	end if	
+
+	gettime = CStr2(hh) & CStr2(mm) & CStr2(ss)
+	gettime = timegrid
+	gettimegap = CStr2(hh) & CStr2(mm) & "00"
+	while (CLNG(gettimegap) < CLNG(gettime))
+		gettimegap = gettimeSS(gettimegap,gap) 	
+	Wend
+	' 초가 60을 넘을수도 있다
+	' 그래서 정상적인 시간으로 바꾸자
+	settimegapSS = gettimeSS(gettimegap,0)
+End Function
+
+Sub set9000(tujajacode)
+	if (tujajacode = "9000") then
+		if (GridPro1.Visible = true) then
+			GridPro1.SetCellString 0 , 0 , 14, GridPro1.GetCellString(0 , 0 , 2 )
+			GridPro2.SetCellString 0 , 0 , 13, GridPro2.GetCellString(0 , 0 , 1 )
+			
+		else
+			GridPro3.SetCellString 0 , 0 , 14, GridPro3.GetCellString(0 , 0 , 2 )
+			GridPro4.SetCellString 0 , 0 , 13, GridPro4.GetCellString(0 , 0 , 1 )
+		end if
+	end if
+End Sub
+'============================================================================
+Sub TRANMANAGER_Receive(szTranID)
+	if szTranID = "3303" then
+		'Combo6_OnListSelChanged Combo6.GetCurSel
+		if Combo6.GetCurSel > 9 then
+			Combo14.Enabled = True
+			if Combo1.GetCurSel >= 0 and Combo1.GetCurSel <= 1 then
+				Label7.Caption = "단위: 백만주, 계약, 십억"
+			else
+				Label7.Caption = "단위: 천주, 계약, 백만"
+			end if
+		else
+			Combo14.SetCurSel = 0
+			Combo14.Caption = Combo14.GetCellString( Combo14.GetCurSel , 0 )
+			Combo14.Enabled = False
+			Label7.Caption = "단위: 천주, 계약, 백만"
+		end if
+		'if Combo6.GetCurSel( ) > 4 then
+		if Combo14.GetCurSel = 1 then
+			if Not (Combo1.GetCurSel >= 2 And RadioGroup1.GetCheckIndex = 1) then
+				For i = 0 to TRANMANAGER.GetValidCount( szTranID , "OutBlock3" ) - 1
+					SetFieldData3303 "외국인합", "OutBlock3", i
+					SetFieldData3303 "개인", "OutBlock3", i
+					SetFieldData3303 "기관", "OutBlock3", i
+					SetFieldData3303 "증권", "OutBlock3", i
+					SetFieldData3303 "보험", "OutBlock3", i
+					SetFieldData3303 "투신", "OutBlock3", i
+					SetFieldData3303 "은행", "OutBlock3", i
+					SetFieldData3303 "기금", "OutBlock3", i
+					SetFieldData3303 "종금", "OutBlock3", i
+					SetFieldData3303 "정부", "OutBlock3", i
+					SetFieldData3303 "기타", "OutBlock3", i
+					SetFieldData3303 "외국인", "OutBlock3", i
+					SetFieldData3303 "기타외국인", "OutBlock3", i
+					SetFieldData3303 "전체", "OutBlock3", i
+					SetFieldData3303 "사모펀드", "OutBlock3", i
+				Next
+				SetFieldData3303 "외국인합", "OutBlock2", 0
+				SetFieldData3303 "개인", "OutBlock2", 0
+				SetFieldData3303 "기관", "OutBlock2", 0
+				SetFieldData3303 "증권", "OutBlock2", 0
+				SetFieldData3303 "보험", "OutBlock2", 0
+				SetFieldData3303 "투신", "OutBlock2", 0
+				SetFieldData3303 "은행", "OutBlock2", 0
+				SetFieldData3303 "기금", "OutBlock2", 0
+				SetFieldData3303 "종금", "OutBlock2", 0
+				SetFieldData3303 "정부", "OutBlock2", 0
+				SetFieldData3303 "기타", "OutBlock2", 0
+				SetFieldData3303 "외국인", "OutBlock2", 0
+				SetFieldData3303 "기타외국인", "OutBlock2", 0
+				SetFieldData3303 "전체", "OutBlock2", 0
+				SetFieldData3303 "사모펀드", "OutBlock2", 0
+			end if
+		end if
+	end if
+End Sub
+'============================================================================
+Sub SetFieldData3303(FieldName, BlockNm, Index)
+'	if Combo1.GetCurSel >= 0 and Combo1.GetCurSel <= 1 then
+'		Num = 1000
+'	else
+'		Num = 1
+'	end if
+	Data = TRANMANAGER.GetItemData("3303", BlockNm, FieldName, Index)
+	if Data = "" then
+		Data = 0
+	else
+		Data = ROUND(Data/1000)
+	end if
+
+	TRANMANAGER.SetItemData "3303", BlockNm, FieldName, Index, Data
+End Sub
+'============================================================================
+Sub Combo14_OnListSelChanged(iIndex)
+	set3302_3303()
+End Sub
+
+Function setchart_Series_Cont(strMarket, strMarketGroup)
+	'// CME관련 시간처리를 위한 함수.
+	'// CME는 strMarket = "F" , strMarketGroup = "04" 로 셋팅요구
+	if strMarket = "*" then
+		bCont = false
+	else
+		bCont = true
+	end if 
+	
+	For i = 0 to 14
+		seriesNm = "Series"&CStr(i)
+		TeeChart2.Series_SetCont seriesNm, bCont
+		if strMarket = "F" and strMarketGroup = "04" then
+			TeeChart2.Series_SetMarketTime seriesNm, strMarket , strMarketGroup 
+		End If
+		if i=0 then
+			TeeChart3.Series_SetCont seriesNm, bCont
+			if strMarket = "F" and strMarketGroup = "04" then
+				TeeChart3.Series_SetMarketTime seriesNm, strMarket , strMarketGroup 
+			End If				
+		end if
+	Next
+End Function
+
+
+'============================================================================
+Sub Form_FormClose()
+	Dim Fso
+	Set Fso = CreateObject("Scripting.FileSystemObject")	
+	
+	for i = 0 to 14 
+		Form.WriteConfigFileData g_FileName, "TUJAJA_CHECK", "ITEM"&i, g_check(i)
+'		Trace "Test Step " &  i & "=" & g_check(i)
+	Next
+End Sub
+
+'============================================================================
+Sub RadioGroup2_OnClick(nIndex)
+	nTop = GridPro1.GetTopHeadCellTop( 0, 1, 0)
+	nBotton = GridPro1.GetTopHeadCellBottom( 0 , 1 , 0 )
+	nHeight = nBotton - nTop		
+	if nIndex = 0 then		
+		if Button1.UseImage = 455 then
+			GridPro1.Height = 488
+			GridPro2.Top =  66
+			GridPro3.Height = 488
+			GridPro4.Top = 66
+			ChartVisible(1)
+	
+		elseif Button1.UseImage = 1150 then
+			GridPro1.Height = 255
+			GridPro2.Top = 66
+			GridPro3.Height = 255
+			GridPro4.Top = 66
+			ChartVisible(0)
+			SetGraphData()			
+		end if
+		
+		if nHeight <= 0 then
+			GridPro1.Top = 82
+			GridPro3.Top = 82
+		end if		
+	else
+		if Button1.UseImage = 455 then
+			GridPro1.Height = 492
+			GridPro2.Top =  551 		
+			GridPro3.Height = 492
+			GridPro4.Top = 551
+			ChartVisible(1)	
+		elseif Button1.UseImage = 1150 then
+			GridPro1.Height = 270
+			GridPro2.Top = 319
+			GridPro3.Height = 270
+			GridPro4.Top = 319
+			ChartVisible(0)
+			SetGraphData()
+		end if
+		GridPro1.Top = 67
+		GridPro3.Top = 67
+	end if
+End Sub
+'============================================================================
+Sub GridPro_Title_OnResizedCol(lCol)
+	wth = GridPro_Title.GetColWidth( lCol )
+	GridPro1.SetColWidth lCol , wth
+	GridPro3.SetColWidth lCol , wth
+End Sub
+'============================================================================
+Sub GridPro_Title_OnTHLClicked(lRow , lCol , bUpDn , pvarProcessed)
+	if lCol >=1 then
+		if bUpDn = 0 or bUpDn = 1 then
+			for i = lCol to lCol
+				if g_check( i - 1) = 1 then
+					TeeChart2.ShowGraph "Series" & i - 1 , false
+					g_check(i - 1) = 0
+				elseif g_check(i - 1) = 0 then
+					TeeChart2.ShowGraph "Series" & i - 1 , true
+					g_check( i - 1) = 1
+				end if
+			next
+		end if
+	end if
+End Sub
+'============================================================================
+'============================================================================
+Sub TeeChart2_OnDblClick()
+	TeeChart2.ShowProperty '
+End Sub
